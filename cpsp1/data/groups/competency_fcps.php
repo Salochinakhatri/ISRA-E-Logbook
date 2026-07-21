@@ -10,7 +10,7 @@ declare(strict_types=1);
 return [
     [
         'id' => 66,
-        'label' => 'Blood Vessels and Lymphatics(FCPS - II)',
+        'label' => 'Blood Vessels and Lymphatics',
         'children' => [
             ['id' => 715, 'label' => 'Arterial diseases (aneurysms, arteriopathies, occlusive and vasomotor discorder)'],
             ['id' => 717, 'label' => 'Diseases of lymphadenopathy'],
@@ -18,7 +18,7 @@ return [
     ],
     [
         'id' => 64,
-        'label' => 'Cardiology(FCPS - II)',
+        'label' => 'Cardiology',
         'children' => [
             ['id' => 682, 'label' => 'Prevention of cardiac diseases'],
             ['id' => 683, 'label' => 'Coronary heart disease, Congential heart disease'],
@@ -41,7 +41,7 @@ return [
     ],
     [
         'id' => 71,
-        'label' => 'Dermatology(FCPS - II)',
+        'label' => 'Dermatology',
         'children' => [
             ['id' => 766, 'label' => 'Cellulitis'],
             ['id' => 767, 'label' => 'Cutaneous drug reactions'],
@@ -53,7 +53,7 @@ return [
     ],
     [
         'id' => 75,
-        'label' => 'Endocrinology, Diabetes Mellitus, Lipid Disorders, Nutrition(FCPS - II)',
+        'label' => 'Endocrinology, Diabetes Mellitus, Lipid Disorders, Nutrition',
         'children' => [
             ['id' => 810, 'label' => 'Diabities melitu, Diabetic emergencies, hypoglycemic state'],
             ['id' => 811, 'label' => 'Diseases of hypothalmus, Pituitary gland'],
@@ -68,7 +68,7 @@ return [
     ],
     [
         'id' => 74,
-        'label' => 'Fluid, Electrolytes, Acid Base Disorders and Poisoning(FCPS - II)',
+        'label' => 'Fluid, Electrolytes, Acid Base Disorders and Poisoning',
         'children' => [
             ['id' => 802, 'label' => 'Hypo and hyper natermia'],
             ['id' => 803, 'label' => 'Hypo and hyper kalemia'],
@@ -82,7 +82,7 @@ return [
     ],
     [
         'id' => 72,
-        'label' => 'Geriatrics(FCPS - II)',
+        'label' => 'Geriatrics',
         'children' => [
             ['id' => 772, 'label' => 'Acute confusion'],
             ['id' => 773, 'label' => 'Falls'],
@@ -93,7 +93,7 @@ return [
     ],
     [
         'id' => 69,
-        'label' => 'GI Tract and Liver(FCPS - II)',
+        'label' => 'GI Tract and Liver',
         'children' => [
             ['id' => 733, 'label' => 'Nausea, Vomiting, Hiccups, Dyspepsia'],
             ['id' => 734, 'label' => 'GERD, Dysphagia'],
@@ -120,7 +120,7 @@ return [
     ],
     [
         'id' => 65,
-        'label' => 'Hamatology and Medical Oncology(FCPS - II)',
+        'label' => 'Hamatology and Medical Oncology',
         'children' => [
             ['id' => 699, 'label' => 'Anemias'],
             ['id' => 700, 'label' => 'Haemoglobinopathies'],
@@ -142,7 +142,7 @@ return [
     ],
     [
         'id' => 73,
-        'label' => 'Infection, Disorders due to Physical agents and Enviroment(FCPS - II)',
+        'label' => 'Infection, Disorders due to Physical agents and Enviroment',
         'children' => [
             ['id' => 777, 'label' => 'Fever of unknown origin'],
             ['id' => 778, 'label' => 'Sepsis syndrome'],
@@ -173,7 +173,7 @@ return [
     ],
     [
         'id' => 61,
-        'label' => 'Multi Disciplinary Clinical Themes(FCPS - II)',
+        'label' => 'Multi Disciplinary Clinical Themes',
         'children' => [
             ['id' => 647, 'label' => 'Breathlessness'],
             ['id' => 648, 'label' => 'Lethargy'],
@@ -185,7 +185,7 @@ return [
     ],
     [
         'id' => 67,
-        'label' => 'Musculoskeletal, Allergic and Immunological(FCPS - II)',
+        'label' => 'Musculoskeletal, Allergic and Immunological',
         'children' => [
             ['id' => 718, 'label' => 'Degenerative and crystal induced arthropathies'],
             ['id' => 719, 'label' => 'Osteoporosis'],
@@ -205,7 +205,7 @@ return [
     ],
     [
         'id' => 70,
-        'label' => 'Nephrology(FCPS - II)',
+        'label' => 'Nephrology',
         'children' => [
             ['id' => 754, 'label' => 'Acute renal failure,Chronic renal failure'],
             ['id' => 755, 'label' => 'Glomerulopathies'],
@@ -223,7 +223,7 @@ return [
     ],
     [
         'id' => 63,
-        'label' => 'Neurology(FCPS - II)',
+        'label' => 'Neurology',
         'children' => [
             ['id' => 666, 'label' => 'Headache, Facial pain, Discogenic Neck pain'],
             ['id' => 667, 'label' => 'Meningitis, Encephalitis, Brain abscess'],
@@ -246,7 +246,7 @@ return [
     ],
     [
         'id' => 60,
-        'label' => 'Procedures(FCPS - II)',
+        'label' => 'Procedures',
         'children' => [
             ['id' => 621, 'label' => 'Pleural aspiration'],
             ['id' => 622, 'label' => 'Peritoneal aspiration'],
@@ -281,14 +281,14 @@ return [
     ],
     [
         'id' => 68,
-        'label' => 'Psychiatry(FCPS - II)',
+        'label' => 'Psychiatry',
         'children' => [
             ['id' => 732, 'label' => 'Acute psychosis'],
         ],
     ],
     [
         'id' => 62,
-        'label' => 'Pulmonology(FCPS - II)',
+        'label' => 'Pulmonology',
         'children' => [
             ['id' => 653, 'label' => 'Prevention of respiratory diseases'],
             ['id' => 654, 'label' => 'Cough, Haemoptysis, Dyspnea'],

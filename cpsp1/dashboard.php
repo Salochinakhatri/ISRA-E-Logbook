@@ -48,7 +48,7 @@ if (!$isTrainee) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | CPSP ePortal</title>
+    <title>Dashboard | Isra ePortal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -59,7 +59,7 @@ if (!$isTrainee) {
     <header class="dash-topbar">
         <div class="dash-brand">
             <img src="assets/images/logo.png" alt="" class="dash-brand__logo" width="40" height="40">
-            <span class="dash-brand__text">CPSP ePortal <small>e-Log Book</small></span>
+            <span class="dash-brand__text">Isra ePortal <small>e-Log Book</small></span>
         </div>
         <nav class="dash-nav">
             <a href="dashboard.php" class="dash-nav__link active"><i class="fa-solid fa-house"></i> Home</a>
@@ -128,46 +128,46 @@ unset($_SESSION['profile_old']);
 
 $trainingListError = null;
 
-$pageTitle = 'CPSP e-Logbook';
+$pageTitle = 'Isra e-Logbook';
 $mainTitle = 'Training';
 if ($tab === 'home') {
-    $pageTitle = 'Home | CPSP e-Logbook';
+    $pageTitle = 'Home | Isra e-Logbook';
     $mainTitle = 'Home';
 } elseif ($tab === 'training' && $sub === 'add') {
-    $pageTitle = 'Add Training Entry | CPSP e-Logbook';
-    $mainTitle = 'Add Training Entry';
+    $pageTitle = 'Add Training Entry | Isra e-Logbook';
+    $mainTitle = 'Add Training Entry';  
 } elseif ($tab === 'training' && $sub === 'view') {
-    $pageTitle = 'View Training Entry | CPSP e-Logbook';
+    $pageTitle = 'View Training Entry | Isra e-Logbook';
     $mainTitle = 'View Training Entry';
 } elseif ($tab === 'rotational' && $sub === 'list') {
-    $pageTitle = 'Rotational Training | CPSP e-Logbook';
+    $pageTitle = 'Rotational Training | Isra e-Logbook';
     $mainTitle = 'Rotational Training';
 } elseif ($tab === 'rotational' && $sub === 'add') {
-    $pageTitle = 'Add Rotational Training | CPSP e-Logbook';
+    $pageTitle = 'Add Rotational Training | Isra e-Logbook';
     $mainTitle = 'Add Rotational Training';
 } elseif ($tab === 'journal' && $sub === 'list') {
-    $pageTitle = 'Journal Club | CPSP e-Logbook';
+    $pageTitle = 'Journal Club | Isra e-Logbook';
     $mainTitle = 'Journal Club';
 } elseif ($tab === 'journal' && $sub === 'add') {
-    $pageTitle = 'Add Journal Club Entry | CPSP e-Logbook';
+    $pageTitle = 'Add Journal Club Entry | Isra e-Logbook';
     $mainTitle = 'Add Journal Club Entry';
 } elseif ($tab === 'presented' && $sub === 'list') {
-    $pageTitle = 'Paper/Poster Presented | CPSP e-Logbook';
+    $pageTitle = 'Paper/Poster Presented | Isra e-Logbook';
     $mainTitle = 'Paper/Poster Presented';
 } elseif ($tab === 'presented' && $sub === 'add') {
-    $pageTitle = 'Add Paper/Poster Presented | CPSP e-Logbook';
+    $pageTitle = 'Add Paper/Poster Presented | Isra e-Logbook';
     $mainTitle = 'Add Paper/Poster Presented';
 } elseif ($tab === 'published' && $sub === 'list') {
-    $pageTitle = 'Paper Published | CPSP e-Logbook';
+    $pageTitle = 'Paper Published | Isra e-Logbook';
     $mainTitle = 'Paper Published';
 } elseif ($tab === 'published' && $sub === 'add') {
-    $pageTitle = 'Add Paper Published | CPSP e-Logbook';
+    $pageTitle = 'Add Paper Published | Isra e-Logbook';
     $mainTitle = 'Add Paper Published';
 } elseif ($tab === 'reports' && $sub === 'list') {
-    $pageTitle = 'Reports | CPSP e-Logbook';
+    $pageTitle = 'Reports | Isra e-Logbook';
     $mainTitle = 'Reports';
 } elseif ($tab === 'reports' && $sub === 'add') {
-    $pageTitle = 'Add Report | CPSP e-Logbook';
+    $pageTitle = 'Add Report | Isra e-Logbook';
     $mainTitle = 'Add Report';
 }
 
@@ -581,7 +581,7 @@ $bodyClass = 'page-elogbook';
         <aside class="elog-sidebar" id="elogSidebar">
             <div class="elog-sidebar__brand">
                 <img src="assets/images/logo.png" alt="logo" class="elog-sidebar__logo" width="36" height="36">
-                <span class="elog-sidebar__brand-text">CPSP e-Logbook</span>
+                <span class="elog-sidebar__brand-text">Isra e-Logbook</span>
             </div>
             <nav class="elog-sidebar__nav" aria-label="Main">
                 <a class="elog-sidebar__link<?= $tab === 'home' ? ' is-active' : '' ?>" href="dashboard.php?tab=home">
@@ -659,8 +659,7 @@ $bodyClass = 'page-elogbook';
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="elog-topbar__brand">
-                    <img src="<?= htmlspecialchars($displayProfileImage !== '' ? $displayProfileImage : 'assets/images/logo.png', ENT_QUOTES, 'UTF-8') ?>" alt="" class="elog-topbar__logo" width="36" height="36">
-                    <span class="elog-topbar__title">CPSP ePortal <small>e-Log Book</small></span>
+                    <span class="elog-topbar__title">INTERNAL MEDICINE (FCPS)</span>
                 </div>
                 <button type="button" class="elog-menu-btn" id="elogTopbarToggle" aria-controls="elogTopbarNav" aria-expanded="false" aria-label="Open account menu">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -776,8 +775,8 @@ $bodyClass = 'page-elogbook';
                     <?php require __DIR__ . '/views/training_list.php'; ?>
                 <?php elseif ($tab === 'training' && $sub === 'add'): ?>
                     <?php
-                    if (!defined('CPSP_FROM_DASHBOARD')) {
-                        define('CPSP_FROM_DASHBOARD', true);
+                    if (!defined('Isra_FROM_DASHBOARD')) {
+                        define('Isra_FROM_DASHBOARD', true);
                     }
                     require __DIR__ . '/views/training_add.php';
                     ?>
@@ -790,8 +789,8 @@ $bodyClass = 'page-elogbook';
                     <?php require __DIR__ . '/views/rotational_list.php'; ?>
                 <?php elseif ($tab === 'rotational' && $sub === 'add'): ?>
                     <?php
-                    if (!defined('CPSP_FROM_DASHBOARD')) {
-                        define('CPSP_FROM_DASHBOARD', true);
+                    if (!defined('Isra_FROM_DASHBOARD')) {
+                        define('Isra_FROM_DASHBOARD', true);
                     }
                     require __DIR__ . '/views/rotational_add.php';
                     ?>
@@ -799,8 +798,8 @@ $bodyClass = 'page-elogbook';
                     <?php require __DIR__ . '/views/journal_list.php'; ?>
                 <?php elseif ($tab === 'journal' && $sub === 'add'): ?>
                     <?php
-                    if (!defined('CPSP_FROM_DASHBOARD')) {
-                        define('CPSP_FROM_DASHBOARD', true);
+                    if (!defined('Isra_FROM_DASHBOARD')) {
+                        define('Isra_FROM_DASHBOARD', true);
                     }
                     require __DIR__ . '/views/journal_add.php';
                     ?>
@@ -808,8 +807,8 @@ $bodyClass = 'page-elogbook';
                     <?php require __DIR__ . '/views/presented_list.php'; ?>
                 <?php elseif ($tab === 'presented' && $sub === 'add'): ?>
                     <?php
-                    if (!defined('CPSP_FROM_DASHBOARD')) {
-                        define('CPSP_FROM_DASHBOARD', true);
+                    if (!defined('Isra_FROM_DASHBOARD')) {
+                        define('Isra_FROM_DASHBOARD', true);
                     }
                     require __DIR__ . '/views/presented_add.php';
                     ?>
@@ -817,8 +816,8 @@ $bodyClass = 'page-elogbook';
                     <?php require __DIR__ . '/views/published_list.php'; ?>
                 <?php elseif ($tab === 'published' && $sub === 'add'): ?>
                     <?php
-                    if (!defined('CPSP_FROM_DASHBOARD')) {
-                        define('CPSP_FROM_DASHBOARD', true);
+                    if (!defined('Isra_FROM_DASHBOARD')) {
+                        define('Isra_FROM_DASHBOARD', true);
                     }
                     require __DIR__ . '/views/published_add.php';
                     ?>
@@ -837,7 +836,7 @@ $bodyClass = 'page-elogbook';
         <div class="modal__backdrop" data-close-modal></div>
         <div class="modal__panel">
             <h2 class="modal__title" id="logoutModalTitle" style="color: #0b6040; margin-bottom: 10px;">Confirm Logout</h2>
-            <p class="modal__text" style="font-size: 16px; margin-bottom: 25px;">Are you sure you want to logout from CPSP e-Logbook?</p>
+            <p class="modal__text" style="font-size: 16px; margin-bottom: 25px;">Are you sure you want to logout from Isra e-Logbook?</p>
             <div style="display: flex; gap: 15px;">
                 <a href="logout.php" class="btn btn-login" style="flex: 1; text-align: center; text-decoration: none;">OK</a>
                 <button type="button" class="btn btn-forgot" data-close-modal style="flex: 1; margin: 0;">Cancel</button>

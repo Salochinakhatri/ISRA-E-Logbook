@@ -1,10 +1,17 @@
--- CPSP ePortal e-Log Book – MySQL schema (XAMPP / WAMP / Laragon)
--- Create database first: CREATE DATABASE cpsp_eportal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- Then import: mysql -u root cpsp_eportal < database.sql
+-- =============================================================================
+-- DATABASE SETUP FOR CPSP EPORTAL (cpsp_eportal)
+-- =============================================================================
+CREATE DATABASE IF NOT EXISTS `cpsp_eportal` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `cpsp_eportal`;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `suggestions`;
+DROP TABLE IF EXISTS `published_entries`;
+DROP TABLE IF EXISTS `presented_entries`;
+DROP TABLE IF EXISTS `journal_entries`;
+DROP TABLE IF EXISTS `rotational_entries`;
 DROP TABLE IF EXISTS `training_entries`;
 DROP TABLE IF EXISTS `user_profiles`;
 DROP TABLE IF EXISTS `users`;
@@ -16,6 +23,8 @@ CREATE TABLE `user_types` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_user_types_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `user_types` (`id`, `name`) VALUES (1, 'Trainee'), (2, 'Supervisor'), (3, 'Fellow');
 
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -43,35 +52,10 @@ CREATE TABLE `user_profiles` (
   CONSTRAINT `fk_user_profiles_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `user_types` (`id`, `name`) VALUES
-  (1, 'Trainee'),
-  (2, 'Supervisor'),
-  (3, 'Fellow')
-ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
-
--- Demo password for all sample users: Password123!
-INSERT INTO `users` (`user_type_id`, `username`, `email`, `password`) VALUES
-  (1, '2022-23675', 'trainee.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa'),
-  (2, 'supervisor01', 'supervisor.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa'),
-  (3, 'fellow01', 'fellow.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa')
-ON DUPLICATE KEY UPDATE
-  `email` = VALUES(`email`),
-  `password` = VALUES(`password`),
-  `user_type_id` = VALUES(`user_type_id`);
-
-INSERT INTO `user_profiles` (`user_id`, `full_name`, `phone`, `bio`, `profile_image`) VALUES
-  (1, 'Dr. Trainee Demo', '+92-300-0000000', 'Trainee in Internal Medicine, focused on structured competency-based training and evidence-based documentation.', ''),
-  (2, 'Dr. Supervisor Demo', '+92-300-1111111', 'Supervisor account for review and approval workflow.', ''),
-  (3, 'Dr. Fellow Demo', '+92-300-2222222', 'Fellow account for training and supervision support.', '')
-ON DUPLICATE KEY UPDATE
-  `full_name` = VALUES(`full_name`),
-  `phone` = VALUES(`phone`),
-  `bio` = VALUES(`bio`),
-  `profile_image` = VALUES(`profile_image`);
-
-CREATE TABLE IF NOT EXISTS `training_entries` (
+CREATE TABLE `training_entries` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` INT UNSIGNED NOT NULL,
+  `entry_type` VARCHAR(20) NOT NULL DEFAULT 'training',
   `form_type` VARCHAR(10) NOT NULL DEFAULT '',
   `hospt_reg_no` VARCHAR(120) NOT NULL DEFAULT '',
   `date_of_admission` DATE DEFAULT NULL,
@@ -95,7 +79,102 @@ CREATE TABLE IF NOT EXISTS `training_entries` (
   PRIMARY KEY (`id`),
   KEY `idx_training_user` (`user_id`),
   KEY `idx_training_status` (`entry_status`),
+  KEY `idx_training_entry_type` (`entry_type`),
   CONSTRAINT `fk_training_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `rotational_entries` (
+  `id`                INT UNSIGNED      NOT NULL AUTO_INCREMENT,
+  `user_id`           INT UNSIGNED      NOT NULL,
+  `form_type`         VARCHAR(10)       NOT NULL DEFAULT '',
+  `hospt_reg_no`      VARCHAR(120)      NOT NULL DEFAULT '',
+  `date_of_admission` DATE              DEFAULT NULL,
+  `pt_gender`         VARCHAR(20)       NOT NULL DEFAULT '',
+  `pt_age`            VARCHAR(20)       NOT NULL DEFAULT '',
+  `pt_age_type`       VARCHAR(30)       NOT NULL DEFAULT 'Year[s]',
+  `pt_diagnosis`      VARCHAR(500)      NOT NULL DEFAULT '',
+  `under_sup_name`    VARCHAR(255)      NOT NULL DEFAULT '',
+  `level_id`          VARCHAR(20)       NOT NULL DEFAULT '',
+  `outcome_id`        VARCHAR(20)       NOT NULL DEFAULT '',
+  `brief_desc`        MEDIUMTEXT        NOT NULL,
+  `entry_for_prog_id` VARCHAR(10)       NOT NULL DEFAULT '',
+  `rot_ids`           JSON              DEFAULT NULL,
+  `rot_detail_ids`    JSON              DEFAULT NULL,
+  `alt_procedure`     VARCHAR(500)      NOT NULL DEFAULT '',
+  `std_post`          VARCHAR(10)       NOT NULL DEFAULT 'No',
+  `entry_status`      VARCHAR(40)       NOT NULL DEFAULT 'Draft',
+  `approved_at`       DATETIME          DEFAULT NULL,
+  `created_at`        TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`        TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_rot_user`   (`user_id`),
+  KEY `idx_rot_status` (`entry_status`),
+  CONSTRAINT `fk_rotational_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `journal_entries` (
+  `id`               INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `user_id`          INT UNSIGNED  NOT NULL,
+  `date_of_diss`     DATE          DEFAULT NULL,
+  `fac_by`           VARCHAR(255)  NOT NULL DEFAULT '',
+  `ref_of_art_disc`  TEXT          NOT NULL,
+  `std_post`         VARCHAR(10)   NOT NULL DEFAULT 'No',
+  `entry_status`     VARCHAR(40)   NOT NULL DEFAULT 'Draft',
+  `approved_at`      DATETIME      DEFAULT NULL,
+  `created_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_journal_user`   (`user_id`),
+  KEY `idx_journal_status` (`entry_status`),
+  CONSTRAINT `fk_journal_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `presented_entries` (
+  `id`               INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `user_id`          INT UNSIGNED  NOT NULL,
+  `rec_date`         DATE          DEFAULT NULL,
+  `rec_title`        VARCHAR(500)  NOT NULL DEFAULT '',
+  `rec_venue`        VARCHAR(255)  NOT NULL DEFAULT '',
+  `conf_name`        TEXT          NOT NULL,
+  `std_post`         VARCHAR(10)   NOT NULL DEFAULT 'No',
+  `entry_status`     VARCHAR(40)   NOT NULL DEFAULT 'Draft',
+  `approved_at`      DATETIME      DEFAULT NULL,
+  `created_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_presented_user`   (`user_id`),
+  KEY `idx_presented_status` (`entry_status`),
+  CONSTRAINT `fk_presented_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `published_entries` (
+  `id`               INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  `user_id`          INT UNSIGNED  NOT NULL,
+  `pub_date`         DATE          DEFAULT NULL,
+  `pub_title`        VARCHAR(500)  NOT NULL DEFAULT '',
+  `full_ref`         TEXT          NOT NULL,
+  `std_post`         VARCHAR(10)   NOT NULL DEFAULT 'No',
+  `entry_status`     VARCHAR(40)   NOT NULL DEFAULT 'Draft',
+  `approved_at`      DATETIME      DEFAULT NULL,
+  `created_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_published_user`   (`user_id`),
+  KEY `idx_published_status` (`entry_status`),
+  CONSTRAINT `fk_published_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─── Seeding Users ────────────────────────────────────────────────────────────
+INSERT INTO `users` (`user_type_id`, `username`, `email`, `password`) VALUES
+  (1, '2022-23675', 'trainee.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa'),
+  (2, 'supervisor01', 'supervisor.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa'),
+  (3, 'fellow01', 'fellow.demo@cpsp.local', '$2y$10$y.foHzRPTDRL3/F/y7AIJOLJDfCZRyT0c0v5/lhODXghlOourdcWa'),
+  (1, '2011-2686', 'salar.trainee@cpsp.local', '$2y$10$3AzAjOi0MulX5v/fRAZ3GOAj/OEaW3t.68RZCMAQUH1/eHR9x7fWS');
+
+INSERT INTO `user_profiles` (`user_id`, `full_name`, `phone`, `bio`, `profile_image`) VALUES
+  (1, 'Dr. Trainee Demo', '+92-300-0000000', 'Trainee in Internal Medicine, focused on structured competency-based training and evidence-based documentation.', ''),
+  (2, 'Dr. Supervisor Demo', '+92-300-1111111', 'Supervisor account for review and approval workflow.', ''),
+  (3, 'Dr. Fellow Demo', '+92-300-2222222', 'Fellow account for training and supervision support.', ''),
+  (4, 'Dr. Salar', '', '', '');
 
 SET FOREIGN_KEY_CHECKS = 1;

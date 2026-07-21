@@ -72,7 +72,7 @@ $lastEntryLabel = $lastEntryLabel ?? null;
                     <?php else: ?>
                         <p class="training-filters__notice-line">Last entry add date (Training or rotation training): <em>no entries yet</em></p>
                     <?php endif; ?>
-                    <p class="training-filters__notice-warn">If no new entry is added within 90 days, the e-logbook may be locked as per CPSP policy.</p>
+                    <p class="training-filters__notice-warn">If no new entry is added within 90 days, the e-logbook may be locked as per Isra policy.</p>
                 </div>
             </div>
         </form>

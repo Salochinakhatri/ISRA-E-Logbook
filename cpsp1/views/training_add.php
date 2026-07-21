@@ -5,7 +5,7 @@ declare(strict_types=1);
 /** @var list<string> $formErrors */
 /** @var array<string,mixed> $old */
 
-if (!defined('CPSP_FROM_DASHBOARD')) {
+if (!defined('Isra_FROM_DASHBOARD')) {
     header('Location: ../dashboard.php?tab=training&sub=add');
     exit;
 }
@@ -13,7 +13,7 @@ if (!defined('CPSP_FROM_DASHBOARD')) {
 require_once __DIR__ . '/../includes/training_constants.php';
 
 $formErrors = $formErrors ?? [];
-$old = $old ?? [];
+$old = $formOld ?? [];
 
 if (!function_exists('training_add_oldv')) {
     /**
@@ -242,5 +242,5 @@ if (!empty($old['com_detail_id']) && is_array($old['com_detail_id'])) {
 }
 ?>
 <script>
-window.CPSP_FORM_OLD = <?= json_encode(['com_id' => $oldCom, 'com_detail_id' => $oldDet], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?: '{}' ?>;
+window.Isra_FORM_OLD = <?= json_encode(['com_id' => $oldCom, 'com_detail_id' => $oldDet], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?: '{}' ?>;
 </script>

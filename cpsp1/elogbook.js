@@ -234,18 +234,37 @@
         }
     }
 
-    var trainForm = qs("#trainingAddForm");
-    if (trainForm) {
-        trainForm.addEventListener("submit", function () {
+    // Prevent double form submission on all forms with class elog-form
+    qsa("form.elog-form").forEach(function (form) {
+        form.addEventListener("submit", function (e) {
+            // Trigger TinyMCE save to update textarea values
             try {
                 if (typeof tinymce !== "undefined" && tinymce.triggerSave) {
                     tinymce.triggerSave();
                 }
-            } catch (e) {
+            } catch (err) {
                 /* ignore */
             }
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                if (submitBtn.disabled) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Short timeout to let the submit event bubble/propagate before disabling
+                setTimeout(function () {
+                    submitBtn.disabled = true;
+                    var textNode = Array.prototype.slice.call(submitBtn.childNodes).filter(function(node) {
+                        return node.nodeType === Node.TEXT_NODE;
+                    })[0];
+                    if (textNode) {
+                        textNode.textContent = " Submitting...";
+                    }
+                }, 10);
+            }
         });
-    }
+    });
 
     /* Custom Logout Modal */
     var logoutModal = qs("#logoutModal");

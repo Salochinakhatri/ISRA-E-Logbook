@@ -10,7 +10,7 @@ declare(strict_types=1);
 return [
     [
         'id' => 52,
-        'label' => 'Cardiology(IMM)',
+        'label' => 'Cardiology',
         'children' => [
             ['id' => 520, 'label' => 'Preventive Cardiology'],
             ['id' => 521, 'label' => 'Coronary Heart Disease'],
@@ -32,7 +32,7 @@ return [
     ],
     [
         'id' => 55,
-        'label' => 'Endocrinology, Diabetes Mellitus, Lipid Disorders(IMM)',
+        'label' => 'Endocrinology, Diabetes Mellitus, Lipid Disorders',
         'children' => [
             ['id' => 567, 'label' => 'Diabetes Melitus'],
             ['id' => 568, 'label' => 'Diabetic Coma'],
@@ -48,7 +48,7 @@ return [
     ],
     [
         'id' => 58,
-        'label' => 'Fluid, Electrolytes, Acid Base Disorders and Poisoning(IMM)',
+        'label' => 'Fluid, Electrolytes, Acid Base Disorders and Poisoning',
         'children' => [
             ['id' => 599, 'label' => 'Hypo and Hyper natremia'],
             ['id' => 600, 'label' => 'Hypo and hyper Kalemia'],
@@ -65,7 +65,7 @@ return [
     ],
     [
         'id' => 50,
-        'label' => 'GI Tract and Liver(IMM)',
+        'label' => 'GI Tract and Liver',
         'children' => [
             ['id' => 472, 'label' => 'Nausea, Vomiting, Hiccups, Dyspepsia'],
             ['id' => 473, 'label' => 'GERD, Dysphagia'],
@@ -87,7 +87,7 @@ return [
     ],
     [
         'id' => 57,
-        'label' => 'Hematology and Medical Oncology(IMM)',
+        'label' => 'Hematology and Medical Oncology',
         'children' => [
             ['id' => 590, 'label' => 'Multiple myeloma'],
             ['id' => 583, 'label' => 'Anemias'],
@@ -110,7 +110,7 @@ return [
     ],
     [
         'id' => 51,
-        'label' => 'Infections, Disorders due to Physical agents and Environment(IMM)',
+        'label' => 'Infections, Disorders due to Physical agents and Environment',
         'children' => [
             ['id' => 488, 'label' => 'Fever of unknown origin'],
             ['id' => 489, 'label' => 'Sepsis syndrome'],
@@ -147,7 +147,7 @@ return [
     ],
     [
         'id' => 49,
-        'label' => 'Multi Disciplinary Clinical Scenarios(IMM)',
+        'label' => 'Multi Disciplinary Clinical Scenarios',
         'children' => [
             ['id' => 467, 'label' => 'Breathlessness'],
             ['id' => 468, 'label' => 'Lethargy'],
@@ -158,7 +158,7 @@ return [
     ],
     [
         'id' => 59,
-        'label' => 'Musculoskeletal, Allergic and Immunological Disorders(IMM)',
+        'label' => 'Musculoskeletal, Allergic and Immunological Disorders',
         'children' => [
             ['id' => 610, 'label' => 'Degenerative and crystal induced arthopathies'],
             ['id' => 611, 'label' => 'Osteoporosis'],
@@ -178,7 +178,7 @@ return [
     ],
     [
         'id' => 56,
-        'label' => 'Nephrology(IMM)',
+        'label' => 'Nephrology',
         'children' => [
             ['id' => 578, 'label' => 'Nephrotic Syndrome, Proteinuria'],
             ['id' => 581, 'label' => 'Multisystem diseases with Kidney involvement'],
@@ -191,7 +191,7 @@ return [
     ],
     [
         'id' => 54,
-        'label' => 'Neurology(IMM)',
+        'label' => 'Neurology',
         'children' => [
             ['id' => 550, 'label' => 'Headache, faicial Pain'],
             ['id' => 551, 'label' => 'Meningitis, Encephalitis'],
@@ -214,7 +214,7 @@ return [
     ],
     [
         'id' => 1,
-        'label' => 'Procedures(IMM)',
+        'label' => 'Procedures',
         'children' => [
             ['id' => 1, 'label' => 'Pleural Aspiration'],
             ['id' => 2, 'label' => 'Peritoneal Aspiration'],
@@ -252,7 +252,7 @@ return [
     ],
     [
         'id' => 53,
-        'label' => 'Pulmonolgy(IMM)',
+        'label' => 'Pulmonolgy',
         'children' => [
             ['id' => 536, 'label' => 'Prevention of Respiratory diseases'],
             ['id' => 537, 'label' => 'Cough, Haemoptysis, Dyspnoea'],
