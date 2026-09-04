@@ -3186,3 +3186,280 @@ button.competency-tree__toggle:hover {
         gap: 10px;
     }
 }
+
+/* ==========================================================================
+   UNIVERSAL RESPONSIVE DROPDOWNS & SELECT MENUS
+   Guarantees 100% responsive boundaries, mobile/desktop containment,
+   clean option text wrapping, and zero horizontal overflow.
+   ========================================================================== */
+
+/* 1. Universal containment for all native select elements */
+select,
+.form-select,
+.field__control,
+.controls select,
+.input-group select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    min-width: 0;
+}
+
+option {
+    font-size: 0.95rem;
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* 2. Responsive Custom Dropdown Container */
+.resp-select-container {
+    position: relative;
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    text-align: left;
+}
+
+/* Visually hide the native select while maintaining accessibility & form submission */
+.resp-select-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Trigger Button */
+.resp-select-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 38px;
+    padding: 0.45rem 2.25rem 0.45rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: #2b354f;
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: var(--radius, 4px);
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box !important;
+    text-align: left;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.resp-select-trigger:hover {
+    border-color: #94a3b8;
+}
+
+.resp-select-container.is-open .resp-select-trigger,
+.resp-select-trigger:focus {
+    outline: none;
+    border-color: var(--green-primary, #28a745);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.16);
+    background-color: #fafdfb;
+}
+
+.resp-select-trigger.has-error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.18) !important;
+}
+
+/* Selected Label */
+.resp-select-label {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Chevron Indicator */
+.resp-select-arrow {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 0.75rem;
+    color: #64748b;
+    transition: transform 0.2s ease, color 0.18s ease;
+}
+
+.resp-select-container.is-open .resp-select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+    color: var(--green-primary, #28a745);
+}
+
+/* Dropdown Menu Panel */
+.resp-select-dropdown {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius, 4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    display: none;
+    box-sizing: border-box !important;
+    padding: 4px 0;
+    margin: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.resp-select-dropdown.opens-up {
+    top: auto;
+    bottom: calc(100% + 3px);
+    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.15), 0 -8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.resp-select-container.is-open .resp-select-dropdown {
+    display: block;
+    animation: respDropdownIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes respDropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Option Items (CRITICAL: Wraps text nicely, NO overflow) */
+.resp-select-option {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    color: #1e293b;
+    cursor: pointer;
+    transition: background-color 0.1s ease, color 0.1s ease;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    text-align: left;
+    box-sizing: border-box !important;
+    user-select: none;
+}
+
+.resp-select-option:hover,
+.resp-select-option.is-focused {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.resp-select-option.is-selected {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+    font-weight: 600;
+}
+
+.resp-select-option.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: transparent !important;
+}
+
+/* Scrollbar styling for dropdown list */
+.resp-select-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.resp-select-dropdown::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.resp-select-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+.resp-select-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Context-specific adaptations */
+.login-form .resp-select-trigger,
+.select-wrap .resp-select-trigger {
+    min-height: 44px;
+    height: 44px;
+    border-color: var(--input-border, #ced4da);
+}
+
+/* Age input row integration */
+.elog-age-row {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.elog-age-row .elog-age-num {
+    flex: 1 1 50px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.elog-age-row .resp-select-container,
+.elog-age-row .elog-age-unit {
+    flex: 1.25 1 95px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Prevent grid items or form columns from preventing select shrinkage */
+.elog-form .panel-body>.row.elog-form__row>[class*="col-"],
+.controls,
+.field,
+.training-filters__grid>div,
+.sup-filter-form__grid>div {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* On mobile / narrow screens (<= 768px) */
+@media (max-width: 768px) {
+    .resp-select-trigger {
+        font-size: 0.95rem;
+        min-height: 40px;
+        padding-left: 0.75rem;
+        padding-right: 2.2rem;
+    }
+
+    .resp-select-option {
+        font-size: 0.92rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    .resp-select-dropdown {
+        max-height: 230px;
+    }
+}
+
