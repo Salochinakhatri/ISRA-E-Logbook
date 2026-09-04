@@ -27,7 +27,10 @@ class ProfileController extends Controller
 
         // Supervisor specific stats
         $stats = [
-            'trainees_count' => User::whereHas('userType', fn($q) => $q->where('name', 'Trainee'))->count(),
+            'trainees_count' => User::where(function ($q) {
+                $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
+                  ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
+            })->count(),
             'approved_count' => TrainingEntry::where('entry_status', 'Approved')->count(),
             'pending_count'  => TrainingEntry::where('entry_status', 'Awaiting Approval')->count(),
         ];

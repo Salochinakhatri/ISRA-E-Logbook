@@ -38,8 +38,10 @@ class SupervisorApprovalController extends Controller
         $statusFilter = (string) $request->query('status', 'Awaiting Approval');
         $search = trim((string) $request->query('search', ''));
 
-        // Query trainees for filter dropdown
-        $trainees = User::whereHas('userType', fn($q) => $q->where('name', 'Trainee'))
+        $trainees = User::where(function ($q) {
+            $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
+              ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
+        })
             ->with('profile')
             ->orderBy('username')
             ->get();

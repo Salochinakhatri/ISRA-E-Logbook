@@ -32,7 +32,7 @@ class LoginController extends Controller
 
         $userTypes = UserType::orderBy('id')->get();
 
-        return view('auth.login', compact('userTypes'));
+        return view('auth.login', compact('userTypes', 'tenant'));
     }
 
     public function login(Request $request): RedirectResponse

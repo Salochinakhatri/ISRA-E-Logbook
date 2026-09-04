@@ -20,28 +20,28 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// ─── Direct URL Entry Points (e.g. /cpsp1 or /cpsp2) ─────────────────────
-Route::get('/cpsp1/{any?}', function (?string $any = null) {
-    session(['dev_tenant' => 'cpsp1.test']);
-    if (session('tenant_id') && (int) session('tenant_id') !== 1) {
-        session()->forget(['user_id', 'user_type_id', 'username', 'email', 'user_type', 'tenant_id']);
-    }
-    if ($any) {
-        return redirect('/' . ltrim($any, '/'));
-    }
-    return redirect(session()->has('user_id') ? '/dashboard' : '/');
-})->where('any', '.*');
+// ─── Dynamic Tenant Entry Points (e.g. /tenant/{domain}/{any?} or /cpsp1, /cpsp2) ───
+$switchTenant = function (string $domain, ?string $any = null) {
+    $matched = \App\Models\Tenant::where('domain', $domain)
+        ->orWhere('domain', $domain . '.test')
+        ->first();
 
-Route::get('/cpsp2/{any?}', function (?string $any = null) {
-    session(['dev_tenant' => 'cpsp2.test']);
-    if (session('tenant_id') && (int) session('tenant_id') !== 2) {
-        session()->forget(['user_id', 'user_type_id', 'username', 'email', 'user_type', 'tenant_id']);
+    if ($matched) {
+        session(['dev_tenant' => $matched->domain]);
+        if (session('tenant_id') && (int) session('tenant_id') !== (int) $matched->id) {
+            session()->forget(['user_id', 'user_type_id', 'username', 'email', 'user_type', 'tenant_id']);
+        }
     }
+
     if ($any) {
         return redirect('/' . ltrim($any, '/'));
     }
     return redirect(session()->has('user_id') ? '/dashboard' : '/');
-})->where('any', '.*');
+};
+
+Route::get('/tenant/{domain}/{any?}', $switchTenant)->where('any', '.*');
+Route::get('/cpsp1/{any?}', fn(?string $any = null) => $switchTenant('cpsp1.test', $any))->where('any', '.*');
+Route::get('/cpsp2/{any?}', fn(?string $any = null) => $switchTenant('cpsp2.test', $any))->where('any', '.*');
 
 Route::middleware(['tenant'])->group(function () {
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Trainee Entries Review & Approval | CPSP e-Logbook')
+@section('title', 'Trainee Entries Review & Approval | ' . ($tenant->name ?? 'e-Logbook'))
 @section('nav_supervisor_entries', 'is-active')
 
 @section('content')
@@ -10,7 +10,7 @@
         <ol class="breadcrumb-list">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
             <li class="breadcrumb-item separator">/</li>
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">CPSP e-Logbook</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ $tenant->name ?? 'e-Logbook' }}</a></li>
             <li class="breadcrumb-item separator">/</li>
             <li class="breadcrumb-item active" aria-current="page">Review & Approvals</li>
         </ol>
@@ -137,37 +137,39 @@
                 <table class="sup-table sup-table--entries">
                     <thead>
                         <tr>
-                            <th style="width: 35px;"></th>
-                            <th style="width: 40px;">#</th>
-                            <th>Trainee</th>
-                            <th>Category</th>
-                            <th>Date</th>
-                            <th>Diagnosis / Subject</th>
-                            <th>Key Details</th>
-                            <th>Status</th>
-                            <th>Remarks</th>
-                            <th style="text-align: right; min-width: 170px;">Approval Actions</th>
+                            <th style="width: 36px; text-align: left;"><input type="checkbox" id="headerCheckboxToggle" title="Select all entries" style="cursor: pointer;"></th>
+                            <th style="width: 44px; text-align: left;">#</th>
+                            <th style="min-width: 140px; text-align: left;">Trainee</th>
+                            <th style="width: 110px; text-align: left;">Category</th>
+                            <th style="width: 135px; text-align: left; white-space: nowrap;">Date</th>
+                            <th style="min-width: 180px; text-align: left; white-space: nowrap;">Diagnosis / Subject</th>
+                            <th style="min-width: 190px; text-align: left; white-space: nowrap;">Key Details</th>
+                            <th style="width: 130px; text-align: left; white-space: nowrap;">Status</th>
+                            <th style="width: 100px; text-align: left; white-space: nowrap;">Remarks</th>
+                            <th style="width: 160px; text-align: left; white-space: nowrap;">Approval Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($entries as $idx => $entry)
                         <tr class="entry-row" data-entry-id="{{ $entry['type'] }}:{{ $entry['id'] }}">
-                            <td>
-                                <input type="checkbox" name="selected_entries[]" value="{{ $entry['type'] }}:{{ $entry['id'] }}" class="entry-checkbox">
+                            <td style="width: 36px; text-align: left;">
+                                <input type="checkbox" name="selected_entries[]" value="{{ $entry['type'] }}:{{ $entry['id'] }}" class="entry-checkbox" style="cursor: pointer;">
                             </td>
-                            <td>{{ $idx + 1 }}</td>
-                            <td>
+                            <td style="width: 44px; text-align: left; font-weight: 600; color: #6c757d;">
+                                {{ $idx + 1 }}
+                            </td>
+                            <td style="text-align: left;">
                                 <div class="sup-trainee-name">{{ $entry['trainee_name'] }}</div>
                                 <div class="sup-trainee-sub">ID: {{ $entry['trainee_username'] }}</div>
                             </td>
-                            <td>
+                            <td style="text-align: left;">
                                 <span class="badge {{ $entry['badge_class'] }}">{{ $entry['type_label'] }}</span>
                             </td>
-                            <td>
+                            <td style="text-align: left; white-space: nowrap;">
                                 <div class="sup-entry-date">{{ $entry['date_formatted'] }}</div>
                                 <div class="sup-entry-sub">Submitted: {{ $entry['created_formatted'] }}</div>
                             </td>
-                            <td>
+                            <td style="text-align: left;">
                                 <div class="sup-entry-title">
                                     <strong>{{ Str::limit($entry['title'], 60) }}</strong>
                                 </div>
@@ -175,13 +177,13 @@
                                     {{ Str::limit(strip_tags($entry['brief_desc']), 70) }}
                                 </div>
                             </td>
-                            <td>
+                            <td style="text-align: left;">
                                 <div class="sup-entry-submeta">{{ $entry['sub_meta'] }}</div>
                                 @if($entry['level_name'])
                                     <div class="sup-entry-sub">Level: {{ $entry['level_name'] }}</div>
                                 @endif
                             </td>
-                            <td>
+                            <td style="text-align: left;">
                                 @php
                                     $statusBadgeClass = match($entry['entry_status']) {
                                         'Approved' => 'badge--ok',
@@ -198,7 +200,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td>
+                            <td style="text-align: left;">
                                 @if($entry['supervisor_remarks'])
                                     <div class="sup-entry-remarks" title="{{ $entry['supervisor_remarks'] }}">
                                         <i class="fa-solid fa-comment-dots"></i> {{ Str::limit($entry['supervisor_remarks'], 45) }}
@@ -207,7 +209,7 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td style="text-align: right;">
+                            <td style="text-align: left;">
                                 <div class="sup-action-buttons">
                                     {{-- Quick View Details Modal Trigger --}}
                                     <button type="button" class="btn-icon-action btn-icon-action--view js-view-entry" 
@@ -334,6 +336,21 @@
     </div>
 </div>
 
+{{-- In-Page Status Confirmation Modal (Eliminates browser "localhost says" popup) --}}
+<div class="modal" id="quickConfirmModal" role="dialog" aria-modal="true" hidden>
+    <div class="modal__backdrop" data-close-quick-modal></div>
+    <div class="modal__panel" style="max-width: 440px;">
+        <h2 class="modal__title" id="quickConfirmTitle" style="color: #0b6040; margin-bottom: 12px;">Confirm Action</h2>
+        <p class="modal__text" id="quickConfirmText" style="font-size: 15px; margin-bottom: 20px; color: #444; line-height: 1.5;">
+            Are you sure you want to proceed?
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-forgot" data-close-quick-modal style="margin: 0;">Cancel</button>
+            <button type="button" class="btn btn-login" id="quickConfirmOkBtn" style="margin: 0; min-width: 100px;">Confirm</button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -344,6 +361,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var bulkApplyBtn = document.getElementById('bulkApplyBtn');
     var bulkStatusSelect = document.getElementById('bulkStatusSelect');
 
+    var headerCheckboxToggle = document.getElementById('headerCheckboxToggle');
+
     function updateSelectedState() {
         var count = 0;
         itemCheckboxes.forEach(function (cb) {
@@ -351,11 +370,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         selectedCountText.textContent = count + ' selected';
         bulkApplyBtn.disabled = (count === 0 || !bulkStatusSelect.value);
+        if (selectAll) {
+            selectAll.checked = (count > 0 && count === itemCheckboxes.length);
+        }
+        if (headerCheckboxToggle) {
+            headerCheckboxToggle.checked = (count > 0 && count === itemCheckboxes.length);
+        }
     }
 
     if (selectAll) {
         selectAll.addEventListener('change', function () {
             var checked = this.checked;
+            if (headerCheckboxToggle) headerCheckboxToggle.checked = checked;
+            itemCheckboxes.forEach(function (cb) {
+                cb.checked = checked;
+            });
+            updateSelectedState();
+        });
+    }
+
+    if (headerCheckboxToggle) {
+        headerCheckboxToggle.addEventListener('change', function () {
+            var checked = this.checked;
+            if (selectAll) selectAll.checked = checked;
             itemCheckboxes.forEach(function (cb) {
                 cb.checked = checked;
             });
@@ -366,9 +403,6 @@ document.addEventListener('DOMContentLoaded', function () {
     itemCheckboxes.forEach(function (cb) {
         cb.addEventListener('change', function () {
             updateSelectedState();
-            if (!this.checked && selectAll) {
-                selectAll.checked = false;
-            }
         });
     });
 
@@ -376,7 +410,59 @@ document.addEventListener('DOMContentLoaded', function () {
         bulkStatusSelect.addEventListener('change', updateSelectedState);
     }
 
-    // Quick Status buttons
+    // In-page Quick Confirmation Modal Logic
+    var quickConfirmModal = document.getElementById('quickConfirmModal');
+    var quickConfirmTitle = document.getElementById('quickConfirmTitle');
+    var quickConfirmText = document.getElementById('quickConfirmText');
+    var quickConfirmOkBtn = document.getElementById('quickConfirmOkBtn');
+    var pendingStatusAction = null;
+
+    function openQuickConfirm(type, id, status) {
+        if (status === 'Approved') {
+            quickConfirmTitle.textContent = 'Confirm Entry Approval';
+            quickConfirmText.innerHTML = "Are you sure you want to approve this entry? Once approved, the trainee's record will be officially marked as completed.";
+            quickConfirmOkBtn.textContent = 'Yes, Approve';
+            quickConfirmOkBtn.style.backgroundColor = '#28a745';
+        } else if (status === 'Awaiting Approval') {
+            quickConfirmTitle.textContent = 'Mark as Pending';
+            quickConfirmText.textContent = "Are you sure you want to revert this entry to 'Awaiting Approval'?";
+            quickConfirmOkBtn.textContent = 'Set Pending';
+            quickConfirmOkBtn.style.backgroundColor = '#ffc107';
+            quickConfirmOkBtn.style.color = '#212529';
+        } else {
+            quickConfirmTitle.textContent = 'Confirm Status Change';
+            quickConfirmText.textContent = "Are you sure you want to set this entry's status to '" + status + "'?";
+            quickConfirmOkBtn.textContent = 'Confirm';
+            quickConfirmOkBtn.style.backgroundColor = '#0b6040';
+            quickConfirmOkBtn.style.color = '#ffffff';
+        }
+
+        pendingStatusAction = function () {
+            quickForm.action = "/supervisor/entries/" + type + "/" + id + "/status";
+            quickStatusInput.value = status;
+            quickForm.submit();
+        };
+
+        quickConfirmModal.hidden = false;
+    }
+
+    quickConfirmOkBtn.addEventListener('click', function () {
+        if (pendingStatusAction) {
+            var act = pendingStatusAction;
+            pendingStatusAction = null;
+            quickConfirmModal.hidden = true;
+            act();
+        }
+    });
+
+    document.querySelectorAll('[data-close-quick-modal]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            quickConfirmModal.hidden = true;
+            pendingStatusAction = null;
+        });
+    });
+
+    // Quick Status buttons (No native browser window.confirm)
     var quickButtons = document.querySelectorAll('.js-quick-status');
     var quickForm = document.getElementById('quickStatusForm');
     var quickStatusInput = document.getElementById('quickStatusInput');
@@ -385,14 +471,33 @@ document.addEventListener('DOMContentLoaded', function () {
             var type = this.getAttribute('data-type');
             var id = this.getAttribute('data-id');
             var status = this.getAttribute('data-status');
-            
-            if (confirm("Are you sure you want to set this entry's status to '" + status + "'?")) {
-                quickForm.action = "/supervisor/entries/" + type + "/" + id + "/status";
-                quickStatusInput.value = status;
-                quickForm.submit();
-            }
+            openQuickConfirm(type, id, status);
         });
     });
+
+    // Bulk action confirmation
+    var bulkActionForm = document.getElementById('bulkActionForm');
+    if (bulkActionForm) {
+        bulkActionForm.addEventListener('submit', function (e) {
+            var selectedCount = 0;
+            itemCheckboxes.forEach(function (cb) { if (cb.checked) selectedCount++; });
+            var st = bulkStatusSelect ? bulkStatusSelect.value : '';
+            if (st && !bulkActionForm.dataset.confirmed) {
+                e.preventDefault();
+                quickConfirmTitle.textContent = st === 'Approved' ? 'Confirm Bulk Approval' : 'Confirm Bulk Status Update';
+                quickConfirmText.innerHTML = "Are you sure you want to update <strong>" + selectedCount + " selected entries</strong> to status <strong>'" + st + "'</strong>?";
+                quickConfirmOkBtn.textContent = st === 'Approved' ? 'Yes, Approve Selected' : 'Confirm Update';
+                quickConfirmOkBtn.style.backgroundColor = st === 'Approved' ? '#28a745' : '#0b6040';
+                quickConfirmOkBtn.style.color = '#ffffff';
+
+                pendingStatusAction = function () {
+                    bulkActionForm.dataset.confirmed = 'true';
+                    bulkActionForm.submit();
+                };
+                quickConfirmModal.hidden = false;
+            }
+        });
+    }
 
     // Status modal with remarks
     var statusModal = document.getElementById('statusRemarksModal');
@@ -507,9 +612,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     var type = this.getAttribute('data-type');
                     var id = this.getAttribute('data-id');
                     var status = this.getAttribute('data-status');
-                    quickForm.action = "/supervisor/entries/" + type + "/" + id + "/status";
-                    quickStatusInput.value = status;
-                    quickForm.submit();
+                    detailModal.hidden = true;
+                    openQuickConfirm(type, id, status);
                 });
             });
 

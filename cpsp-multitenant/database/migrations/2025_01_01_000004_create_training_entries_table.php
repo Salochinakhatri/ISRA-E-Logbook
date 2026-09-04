@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('outcome_id', 20)->default('');
             $table->mediumText('brief_desc');
             $table->string('entry_for_prog_id', 10)->default('');
-            // program column: 'imm', 'mcps', 'fcps2', 'urogyn', 'obgyn', ''
+            // program column: 'imm', 'mcps', 'fcps2', 'ms', 'dgo', 'obgyn', ''
             $table->string('program', 20)->default('');
             $table->json('com_ids')->nullable();
             $table->json('com_detail_ids')->nullable();

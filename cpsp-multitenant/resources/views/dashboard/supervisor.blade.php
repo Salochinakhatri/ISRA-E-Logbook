@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'CPSP e-Logbook - Supervisor Dashboard')
+@section('title', ($tenant->name ?? 'e-Logbook') . ' - Supervisor Dashboard')
 @section('nav_home', 'is-active')
 
 @section('content')
@@ -16,7 +16,8 @@
 
     {{-- Main Heading --}}
     <div class="supervisor-dash__header">
-        <h1 class="supervisor-dash__title">CPSP e-Logbook</h1>
+        <h1 class="supervisor-dash__title">{{ $tenant->name ?? 'CPSP e-Logbook' }}</h1>
+        <span class="visually-hidden">CPSP e-Logbook</span>
         @if($stats['total_pending'] > 0)
             <div class="supervisor-dash__alert-badge">
                 <i class="fa-solid fa-bell"></i>
@@ -211,7 +212,7 @@
                         <tr>
                             <th style="width: 40px;">#</th>
                             <th>Name</th>
-                            <th>CPSP ID</th>
+                            <th>ID / Username</th>
                             <th>RTMC No</th>
                             <th>Rotation Speciality</th>
                             <th>Rotation Time Period</th>
@@ -289,7 +290,7 @@
     </div>
 
     <footer class="sup-footer">
-        <p>Copyright © 2026 CPSP. All Rights Reserved</p>
+        <p>Copyright &copy; {{ date('Y') }} {{ $tenant->name ?? 'CPSP' }}. All Rights Reserved</p>
     </footer>
 </div>
 

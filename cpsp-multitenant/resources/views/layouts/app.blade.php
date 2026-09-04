@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Isra e-Logbook')</title>
+    <title>@yield('title', ($tenant->name ?? 'Isra e-Logbook'))</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,15 +16,15 @@
     <div class="elog-layout">
         <aside class="elog-sidebar" id="elogSidebar">
             <div class="elog-sidebar__brand">
-                <img src="{{ asset('assets/images/logo.png') }}" alt="logo" class="elog-sidebar__logo" width="36" height="36">
-                <span class="elog-sidebar__brand-text">Isra e-Logbook</span>
+                <img src="{{ $tenant->logo_url ?? asset('assets/images/logo.png') }}" alt="{{ $tenant->name ?? 'Logo' }}" class="elog-sidebar__logo" width="36" height="36">
+                <span class="elog-sidebar__brand-text">{{ $tenant->name ?? 'Isra e-Logbook' }}</span>
             </div>
             <nav class="elog-sidebar__nav" aria-label="Main">
                 <a class="elog-sidebar__link @yield('nav_home', '')" href="{{ route('dashboard', ['program' => request('program')]) }}">
                     <i class="fa-solid fa-house"></i><span>Home</span>
                 </a>
 
-                @if(session('user_type') === 'Trainee')
+                @if(session('user_type') === 'Trainee' || (isset($user) && $user->isTrainee()))
                 {{-- Training --}}
                 <div class="elog-sidebar__group @yield('group_training', '')">
                     <button type="button" class="elog-sidebar__parent" id="trainingToggle" aria-expanded="true">
@@ -133,15 +133,7 @@
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="elog-topbar__brand">
-                    @php
-                        $prog = strtolower((string) request('program', ''));
-                        if ($tenant->domain === 'cpsp2.test' || in_array($prog, ['ms', 'dgo', 'urogyn', 'obgyn'])) {
-                            $topTitle = 'GYNAECOLOGY & OBSTETRICS';
-                        } else {
-                            $topTitle = 'INTERNAL MEDICINE';
-                        }
-                    @endphp
-                    <span class="elog-topbar__title">{{ $topTitle }}</span>
+                    <span class="elog-topbar__title">{{ $tenant ? $tenant->getSpecialtyTitle(request('program')) : 'INTERNAL MEDICINE' }}</span>
                 </div>
                 <button type="button" class="elog-menu-btn" id="elogTopbarToggle" aria-controls="elogTopbarNav" aria-expanded="false" aria-label="Open account menu">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -176,7 +168,7 @@
         <div class="modal__backdrop" data-close-modal></div>
         <div class="modal__panel">
             <h2 class="modal__title" id="logoutModalTitle" style="color: #0b6040; margin-bottom: 10px;">Confirm Logout</h2>
-            <p class="modal__text" style="font-size: 16px; margin-bottom: 25px;">Are you sure you want to logout from Isra e-Logbook?</p>
+            <p class="modal__text" style="font-size: 16px; margin-bottom: 25px;">Are you sure you want to logout from {{ $tenant->name ?? 'Isra e-Logbook' }}?</p>
             <div style="display: flex; gap: 15px;">
                 <form id="logoutForm" action="{{ route('logout') }}" method="post" style="flex: 1;">
                     @csrf

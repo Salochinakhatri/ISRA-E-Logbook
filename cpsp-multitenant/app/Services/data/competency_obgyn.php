@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Obstetrics & Gynaecology / Urogynaecology combined competency tree.
+ * Obstetrics & Gynaecology combined competency tree.
  * Cleaned of program tags (IMM / FCPS).
  *
  * @return list<array{id:int,label:string,children:list<array{id:int,label:string}>}>

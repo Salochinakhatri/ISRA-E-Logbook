@@ -62,20 +62,28 @@ class IdentifyTenant
                     ->first();
             }
 
-            // Path-based check e.g. /cpsp1 or /cpsp2
+            // Path-based check e.g. /cpsp1, /cpsp2, /tenant/{slug}
             if (! $tenant) {
-                $path = $request->path();
-                if (str_starts_with($path, 'cpsp2')) {
-                    $tenant = Tenant::where('domain', 'cpsp2.test')->first();
-                } elseif (str_starts_with($path, 'cpsp1')) {
-                    $tenant = Tenant::where('domain', 'cpsp1.test')->first();
+                $path = trim($request->path(), '/');
+                $segments = explode('/', $path);
+                $first = $segments[0] ?? '';
+                if ($first === 'tenant' && isset($segments[1])) {
+                    $first = $segments[1];
+                }
+                if ($first !== '') {
+                    $tenant = Tenant::where('is_active', true)
+                        ->where(function ($q) use ($first) {
+                            $q->where('domain', $first)
+                              ->orWhere('domain', $first . '.test');
+                        })
+                        ->first();
                 }
             }
 
             if ($tenant) {
                 session(['dev_tenant' => $tenant->domain]);
             } else {
-                $tenant = Tenant::where('domain', 'cpsp1.test')->where('is_active', true)->first();
+                $tenant = Tenant::where('is_active', true)->first();
             }
         }
 

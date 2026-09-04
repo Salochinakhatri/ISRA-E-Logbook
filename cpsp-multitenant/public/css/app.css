@@ -2675,9 +2675,20 @@ button.competency-tree__toggle:hover {
 }
 
 .sup-table--entries thead th {
-    font-size: 12px;
+    font-size: 11.5px;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    padding: 12px 10px;
+    white-space: nowrap;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.sup-table--entries tbody td {
+    padding: 12px 10px;
+    vertical-align: middle;
+    text-align: left;
 }
 
 .sup-entry-date {
@@ -2688,37 +2699,43 @@ button.competency-tree__toggle:hover {
 .sup-entry-sub {
     font-size: 11px;
     color: #6c757d;
+    margin-top: 2px;
 }
 
 .sup-entry-submeta {
     font-size: 12px;
     color: #495057;
+    line-height: 1.4;
 }
 
 .sup-entry-title strong {
     color: #111;
+    display: block;
 }
 
 .sup-entry-brief {
     font-size: 12px;
     margin-top: 3px;
     color: #555;
+    line-height: 1.35;
 }
 
 .sup-entry-remarks {
     font-size: 12px;
     color: #856404;
     background: #fff3cd;
-    padding: 3px 6px;
-    border-radius: 3px;
+    padding: 4px 8px;
+    border-radius: 4px;
     display: inline-block;
+    max-width: 140px;
+    word-break: break-word;
 }
 
 .sup-action-buttons {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    justify-content: flex-end;
+    gap: 6px;
+    justify-content: flex-start;
 }
 
 .btn-icon-action {

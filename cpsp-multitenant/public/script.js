@@ -74,9 +74,10 @@
     } else {
         qsa(".js-logout-confirm").forEach(function (link) {
             link.addEventListener("click", function (e) {
-                var ok = window.confirm("Are you sure you want to logout from CPSP e-Logbook?");
-                if (!ok) {
+                var form = qs("#logoutForm");
+                if (form) {
                     e.preventDefault();
+                    form.submit();
                 }
             });
         });

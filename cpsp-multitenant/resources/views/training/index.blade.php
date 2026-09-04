@@ -62,13 +62,11 @@
                 </div>
             </div>
 
+            @if($lastEntryLabel)
             <div class="training-filters__actions">
-                <button class="btn btn--search" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-                <a class="btn btn--clear" href="{{ route('training.index', ['program' => request('program')]) }}">Clear</a>
-                @if($lastEntryLabel)
-                    <span class="training-filters__notice">Last entry added on: <strong>{{ $lastEntryLabel }}</strong></span>
-                @endif
+                <span class="training-filters__notice">Last entry added on: <strong>{{ $lastEntryLabel }}</strong></span>
             </div>
+            @endif
         </form>
 
         <div class="elog-table-wrap">

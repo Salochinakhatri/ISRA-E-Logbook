@@ -39,7 +39,7 @@
                                 <div class="controls">
                                     <select name="form_type" id="form_type" class="required field__control" required>
                                         <option value="">- Select -</option>
-                                        @foreach(['1'=>'(FORM - A)- Record Of Operations / Procedures','2'=>'(FORM - B)- Record Of Emergency Procedures','3'=>'(FORM - D)- Cases presented at clinico-pathological Conference','6'=>'(FORM - F)- Miscellaneous','7'=>'(FORM - G)- Record of autopsy/exhumation','8'=>'(FORM - H)- Record of medico legal cases','9'=>'(FORM - I)- Clinical Case Discussion','10'=>'(FORM - J)- Record of Orthodontic Procedure'] as $val => $lab)
+                                        @foreach($formTypes ?? \App\Services\LookupService::formTypes() as $val => $lab)
                                             <option value="{{ $val }}" {{ ($formOld['form_type'] ?? '') == $val ? 'selected' : '' }}>{{ $lab }}</option>
                                         @endforeach
                                     </select>
@@ -65,8 +65,9 @@
                                 <div class="controls">
                                     <select name="pt_gender" id="pt_gender" class="required field__control" required>
                                         <option value="">- Select -</option>
-                                        <option value="Male" {{ ($formOld['pt_gender'] ?? '') === 'Male' ? 'selected' : '' }}>Male</option>
-                                        <option value="Female" {{ ($formOld['pt_gender'] ?? '') === 'Female' ? 'selected' : '' }}>Female</option>
+                                        @foreach($genders ?? \App\Services\LookupService::genders() as $g)
+                                            <option value="{{ $g }}" {{ ($formOld['pt_gender'] ?? '') === $g ? 'selected' : '' }}>{{ $g }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -75,10 +76,9 @@
                                 <div class="input-group elog-age-row">
                                     <input type="text" id="pt_age" name="pt_age" class="required field__control elog-age-num" required value="{{ $formOld['pt_age'] ?? '' }}">
                                     <select name="pt_age_type" id="pt_age_type" class="field__control elog-age-unit">
-                                        <option value="Year[s]" {{ ($formOld['pt_age_type'] ?? 'Year[s]') === 'Year[s]' ? 'selected' : '' }}>Year[s]</option>
-                                        <option value="Month[s]" {{ ($formOld['pt_age_type'] ?? '') === 'Month[s]' ? 'selected' : '' }}>Month[s]</option>
-                                        <option value="Week[s]" {{ ($formOld['pt_age_type'] ?? '') === 'Week[s]' ? 'selected' : '' }}>Week[s]</option>
-                                        <option value="Day[s]" {{ ($formOld['pt_age_type'] ?? '') === 'Day[s]' ? 'selected' : '' }}>Day[s]</option>
+                                        @foreach($ageUnits ?? \App\Services\LookupService::ageUnits() as $unit)
+                                            <option value="{{ $unit }}" {{ ($formOld['pt_age_type'] ?? 'Year[s]') === $unit ? 'selected' : '' }}>{{ $unit }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -105,7 +105,7 @@
                                 <div class="controls">
                                     <select name="level_id" id="level_id" class="field__control">
                                         <option value="">- Select -</option>
-                                        @foreach(['1'=>'Observer Status','2'=>'Assistant Status','3'=>'Performed under direct Supervision','4'=>'Performed under indirect supervision','5'=>'Performed independently','5555'=>'Other'] as $val => $lab)
+                                        @foreach($levels ?? \App\Services\LookupService::levels() as $val => $lab)
                                             <option value="{{ $val }}" {{ ($formOld['level_id'] ?? '') == $val ? 'selected' : '' }}>{{ $lab }}</option>
                                         @endforeach
                                     </select>
@@ -116,7 +116,7 @@
                                 <div class="controls">
                                     <select name="outcome_id" id="outcome_id" class="field__control">
                                         <option value="">- Select -</option>
-                                        @foreach(['2'=>'Admitted to inpatient facility','3'=>'Treated and called for follow-up','4'=>'Referred to other specialty unit','5'=>'Death of the patient','7'=>'Improved','8'=>'Discharged','9'=>'Treated','10'=>'Under Treatment','11'=>'Treatment Failure','12'=>'Follow Up','6'=>'Other'] as $val => $lab)
+                                        @foreach($outcomes ?? \App\Services\LookupService::outcomes() as $val => $lab)
                                             <option value="{{ $val }}" {{ ($formOld['outcome_id'] ?? '') == $val ? 'selected' : '' }}>{{ $lab }}</option>
                                         @endforeach
                                     </select>
@@ -139,13 +139,13 @@
                                 <div class="controls">
                                     <select name="entry_for_prog_id" id="entry_for_prog_id" class="required field__control" required>
                                         <option value="">- Select Program -</option>
-                                        @if(($tenant->domain ?? '') === 'cpsp2.test' || in_array(strtolower((string) request('program')), ['ms', 'dgo', 'obgyn', 'urogyn']))
-                                            <option value="MS" {{ ($formOld['entry_for_prog_id'] ?? '') === 'MS' || strtolower((string) request('program')) === 'ms' ? 'selected' : '' }}>MS</option>
-                                            <option value="DGO" {{ ($formOld['entry_for_prog_id'] ?? '') === 'DGO' || strtolower((string) request('program')) === 'dgo' ? 'selected' : '' }}>DGO</option>
-                                        @else
-                                            <option value="MD" {{ ($formOld['entry_for_prog_id'] ?? '') === 'MD' || strtolower((string) request('program')) === 'md' ? 'selected' : '' }}>MD</option>
-                                            <option value="IMM" {{ ($formOld['entry_for_prog_id'] ?? '') === 'IMM' || strtolower((string) request('program')) === 'imm' ? 'selected' : '' }}>IMM</option>
-                                        @endif
+                                        @php
+                                            $progs = $availablePrograms ?? ($tenant ? $tenant->getAvailablePrograms() : ['MD' => 'MD', 'IMM' => 'IMM']);
+                                            $activeProg = strtolower((string) request('program', ''));
+                                        @endphp
+                                        @foreach($progs as $progCode => $progLabel)
+                                            <option value="{{ $progCode }}" {{ ($formOld['entry_for_prog_id'] ?? '') === $progCode || $activeProg === strtolower($progCode) ? 'selected' : '' }}>{{ $progCode }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>

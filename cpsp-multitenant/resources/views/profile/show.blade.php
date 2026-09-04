@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Supervisor Profile | CPSP e-Logbook')
+@section('title', 'Profile | ' . ($tenant->name ?? 'e-Logbook'))
 
 @section('content')
 <div class="sup-profile-page">
@@ -29,7 +29,7 @@
                 {{ $user->profile?->full_name ?: $user->username }}
             </h1>
             <div class="profile-hero-card__meta">
-                <span><i class="fa-solid fa-id-badge"></i> CPSP ID: <strong>{{ $user->username }}</strong></span>
+                <span><i class="fa-solid fa-id-badge"></i> ID / Username: <strong>{{ $user->username }}</strong></span>
                 <span><i class="fa-solid fa-envelope"></i> {{ $user->email }}</span>
                 @if($user->profile?->phone)
                     <span><i class="fa-solid fa-phone"></i> {{ $user->profile->phone }}</span>
@@ -85,7 +85,7 @@
 
                     <div class="form-group" style="margin-bottom: 16px;">
                         <label for="username_disabled" class="control-label" style="font-weight: 600; margin-bottom: 6px; display: block;">
-                            CPSP ID / Username
+                            ID / Username
                         </label>
                         <input type="text" id="username_disabled" class="field__control" 
                                value="{{ $user->username }}" disabled style="background: #e9ecef; cursor: not-allowed;">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPSP ePortal – e-Log Book | Login</title>
+    <title>{{ $tenant->name ?? 'ePortal' }} – e-Log Book | Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
         <div class="modal__backdrop" data-close-modal></div>
         <div class="modal__panel">
             <h2 class="modal__title" id="forgotModalTitle">Password help</h2>
-            <p class="modal__text">Please contact your CPSP programme office or system administrator to reset your portal password. For security, self-service reset is not enabled in this demo.</p>
+            <p class="modal__text">Please contact your programme office or system administrator to reset your portal password.</p>
             <button type="button" class="btn btn-login" data-close-modal>Close</button>
         </div>
     </div>

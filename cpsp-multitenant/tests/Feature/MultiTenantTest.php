@@ -140,7 +140,7 @@ class MultiTenantTest extends TestCase
         $entry1->delete();
     }
 
-    public function test_program_badges_for_urogyn_and_obgyn(): void
+    public function test_program_badges_for_gynae_and_obs(): void
     {
         $cpsp2 = Tenant::where('domain', 'cpsp2.test')->firstOrFail();
         $user2  = User::withoutGlobalScope('tenant')
@@ -407,5 +407,127 @@ class MultiTenantTest extends TestCase
 
         // Clean up
         $entry->delete();
+    }
+
+    public function test_roles_table_and_user_roles_associations(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+
+        // Roles exist
+        $traineeRole = \App\Models\Role::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('slug', 'trainee')->first();
+        $supervisorRole = \App\Models\Role::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('slug', 'supervisor')->first();
+
+        $this->assertNotNull($traineeRole);
+        $this->assertNotNull($supervisorRole);
+        $this->assertEquals('Trainee', $traineeRole->name);
+        $this->assertEquals('Supervisor', $supervisorRole->name);
+
+        // Users are linked to their roles
+        $trainee = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', '2022-23675')->firstOrFail();
+        $supervisor = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'supervisor01')->firstOrFail();
+
+        $this->assertTrue($trainee->hasRole('trainee'));
+        $this->assertTrue($trainee->isTrainee());
+        $this->assertFalse($trainee->isSupervisor());
+
+        $this->assertTrue($supervisor->hasRole('supervisor'));
+        $this->assertTrue($supervisor->isSupervisor());
+        $this->assertFalse($supervisor->isTrainee());
+
+        $this->assertEquals($supervisorRole->id, $supervisor->role_id);
+        $this->assertTrue($supervisor->roles->contains($supervisorRole));
+    }
+
+    public function test_trainee1_and_trainee2_exist_with_proper_roles_and_can_login(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+        $traineeType = UserType::where('tenant_id', $cpsp1->id)->where('name', 'Trainee')->firstOrFail();
+
+        $t1 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'trainee1')->firstOrFail();
+        $t2 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'trainee2')->firstOrFail();
+
+        $this->assertTrue($t1->hasRole('trainee'));
+        $this->assertTrue($t2->hasRole('trainee'));
+        $this->assertEquals('Trainee 1', $t1->profile?->full_name);
+        $this->assertEquals('Trainee 2', $t2->profile?->full_name);
+
+        // Login as trainee1
+        $response = $this->post('http://cpsp1.test/login', [
+            'username'     => 'trainee1',
+            'password'     => 'password',
+            'user_type_id' => $traineeType->id,
+        ]);
+
+        $response->assertRedirect('http://cpsp1.test/dashboard');
+        $this->assertEquals('trainee1', session('username'));
+        $this->assertEquals('Trainee', session('user_type'));
+    }
+
+    public function test_dynamic_tenant_configuration_and_programs_without_hardcoding(): void
+    {
+        // 1. Verify dynamic helper on LookupService
+        $this->assertNotEmpty(\App\Services\LookupService::formTypes());
+        $this->assertNotEmpty(\App\Services\LookupService::levels());
+        $this->assertNotEmpty(\App\Services\LookupService::outcomes());
+        $this->assertNotEmpty(\App\Services\LookupService::genders());
+        $this->assertNotEmpty(\App\Services\LookupService::ageUnits());
+
+        // 2. Create a brand new tenant with arbitrary specialty and custom programs
+        $newTenant = Tenant::updateOrCreate(
+            ['domain' => 'pediatrics.test'],
+            [
+                'name'            => 'Pediatrics e-Logbook',
+                'specialty_title' => 'PEDIATRICS & CHILD HEALTH',
+                'programs'        => [
+                    'PEDS' => 'General Pediatrics',
+                    'NEO'  => 'Neonatology',
+                ],
+                'competency_type' => 'fcps_imm',
+                'is_active'       => true,
+            ]
+        );
+
+        $traineeType = UserType::firstOrCreate([
+            'tenant_id' => $newTenant->id,
+            'name'      => 'Trainee',
+        ]);
+
+        $user = User::withoutGlobalScope('tenant')->updateOrCreate(
+            ['tenant_id' => $newTenant->id, 'username' => 'ped_trainee'],
+            [
+                'user_type_id' => $traineeType->id,
+                'email'        => 'peds@pediatrics.local',
+                'password'     => bcrypt('password'),
+            ]
+        );
+
+        // 3. Test dynamic specialty title and available programs on Tenant model
+        $this->assertEquals('PEDIATRICS & CHILD HEALTH', $newTenant->getSpecialtyTitle());
+        $this->assertArrayHasKey('PEDS', $newTenant->getAvailablePrograms());
+        $this->assertArrayHasKey('NEO', $newTenant->getAvailablePrograms());
+
+        // 4. Test dynamic program badge
+        $metaPeds = Tenant::getProgramMeta('PEDS');
+        $this->assertEquals('PEDS', $metaPeds['code']);
+
+        // 5. Test accessing training create on this dynamic tenant
+        $session = [
+            'user_id'      => $user->id,
+            'user_type_id' => $traineeType->id,
+            'username'     => 'ped_trainee',
+            'user_type'    => 'Trainee',
+            'tenant_id'    => $newTenant->id,
+        ];
+
+        $response = $this->withSession($session)->get('http://pediatrics.test/training/create');
+        $response->assertStatus(200);
+        $response->assertSee('PEDIATRICS & CHILD HEALTH');
+        $response->assertSee('value="PEDS"', false);
+        $response->assertSee('value="NEO"', false);
+
+        // Clean up
+        $user->delete();
+        $traineeType->delete();
+        $newTenant->delete();
     }
 }

@@ -172,7 +172,10 @@ class DashboardController extends Controller
         }
 
         // Supervisor / Fellow view
-        $trainees = User::whereHas('userType', fn($q) => $q->where('name', 'Trainee'))
+        $trainees = User::where(function ($q) {
+            $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
+              ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
+        })
             ->with('profile')
             ->get();
 
@@ -221,9 +224,9 @@ class DashboardController extends Controller
         $rotationalTrainees = $currentTrainees->filter(fn($t) => $t['rotational'] > 0)->values();
 
         $stats = [
-            'feedback_trainee'  => 0,
+            'feedback_trainee'  => Suggestion::count(),
             'cme_credits'       => '12.00',
-            'reports_count'     => 0,
+            'reports_count'     => TrainingEntry::where('entry_status', 'Approved')->count() + RotationalEntry::where('entry_status', 'Approved')->count(),
             'workshop_feedback' => 0,
             'total_pending'     => $currentTrainees->sum('total'),
         ];

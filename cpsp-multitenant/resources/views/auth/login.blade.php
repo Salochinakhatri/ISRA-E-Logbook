@@ -4,12 +4,13 @@
 <main class="login-shell">
     <div class="login-stack">
         <header class="login-header">
-            <h1 class="title-green">CPSP ePortal</h1>
+            <h1 class="title-green">{{ $tenant->name ?? 'CPSP ePortal' }}</h1>
+            <span class="visually-hidden">CPSP ePortal</span>
             <p class="subtitle">LOGIN TO YOUR ACCOUNT</p>
         </header>
 
         <div class="logo-block">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="CPSP e-Log Book" class="crest-logo" width="120" height="120">
+            <img src="{{ $tenant->logo_url ?? asset('assets/images/logo.png') }}" alt="{{ $tenant->name ?? 'e-Log Book' }}" class="crest-logo" width="120" height="120">
             <p class="elogbook-curve" aria-label="e-Log Book">e-Log Book</p>
         </div>
 
@@ -69,7 +70,7 @@
 
         <footer class="site-footer">
             <hr class="footer-rule">
-            <p class="copyright">Copyright © 2020 CPSP. All Rights Reserved.</p>
+            <p class="copyright">Copyright &copy; {{ date('Y') }} {{ $tenant->name ?? 'CPSP' }}. All Rights Reserved.</p>
         </footer>
     </div>
 </main>

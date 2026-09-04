@@ -12,7 +12,10 @@ use Illuminate\View\View;
 
 class RotationalController extends Controller
 {
-    public function __construct(private CompetencyService $competencyService) {}
+    public function __construct(
+        private CompetencyService $competencyService,
+        private \App\Services\TenantManager $tenantManager,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -55,7 +58,18 @@ class RotationalController extends Controller
         $formOld    = session()->pull('form_old', []);
         $formErrors = session()->pull('form_errors', []);
 
-        return view('rotational.create', compact('program', 'compTree', 'formOld', 'formErrors'));
+        $tenant            = $this->tenantManager->get();
+        $availablePrograms = $tenant ? $tenant->getAvailablePrograms() : ['MD' => 'MD', 'IMM' => 'IMM'];
+        $formTypes         = \App\Services\LookupService::formTypes();
+        $levels            = \App\Services\LookupService::levels();
+        $outcomes          = \App\Services\LookupService::outcomes();
+        $genders           = \App\Services\LookupService::genders();
+        $ageUnits          = \App\Services\LookupService::ageUnits();
+
+        return view('rotational.create', compact(
+            'program', 'compTree', 'formOld', 'formErrors',
+            'availablePrograms', 'formTypes', 'levels', 'outcomes', 'genders', 'ageUnits', 'tenant'
+        ));
     }
 
     public function store(Request $request): RedirectResponse

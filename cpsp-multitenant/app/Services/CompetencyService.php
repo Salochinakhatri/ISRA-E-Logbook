@@ -6,7 +6,7 @@ namespace App\Services;
 
 /**
  * Loads competency trees from static data files.
- * Supports IMM, FCPS, UroGyn, and ObGyn trees.
+ * Supports IMM, FCPS, and ObGyn trees.
  */
 class CompetencyService
 {
@@ -48,15 +48,16 @@ class CompetencyService
     {
         $dataDir = __DIR__ . '/data';
 
-        $isGynae = false;
+        $catalogType = 'fcps_imm';
         try {
             $tenant = app(\App\Services\TenantManager::class)->getTenant();
-            if ($tenant && ($tenant->domain === 'cpsp2.test' || (int) $tenant->id === 2)) {
-                $isGynae = true;
+            if ($tenant) {
+                $catalogType = $tenant->getCompetencyType();
             }
         } catch (\Throwable) {}
 
-        if ($isGynae || in_array($program, ['urogyn', 'obgyn', 'ms', 'dgo'], true)) {
+        $prog = strtolower(trim($program));
+        if ($catalogType === 'obgyn' || in_array($prog, ['obgyn', 'ms', 'dgo'], true)) {
             $raw = require $dataDir . '/competency_obgyn.php';
         } else {
             $raw = array_merge(

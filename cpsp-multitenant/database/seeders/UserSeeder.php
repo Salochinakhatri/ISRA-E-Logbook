@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -26,10 +27,12 @@ class UserSeeder extends Seeder
         $tenantManager->set($cpsp1);
 
         $this->seedUsersForTenant($cpsp1, [
-            ['username' => '2022-23675', 'email' => 'trainee.demo@cpsp1.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Internal Medicine.'],
+            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp1.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Internal Medicine.'],
             ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp1.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => ''],
             ['username' => 'fellow01',     'email' => 'fellow.demo@cpsp1.local',     'type' => 'Fellow',     'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Fellow Demo',     'phone' => '+92-300-2222222', 'bio' => ''],
-            ['username' => '2011-2686',   'email' => 'salar.trainee@cpsp1.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
+            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp1.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
+            ['username' => 'trainee1',     'email' => 'trainee1@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Medicine.'],
+            ['username' => 'trainee2',     'email' => 'trainee2@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Medicine.'],
         ]);
 
         // ── Users for cpsp2.test ─────────────────────────────────────────────
@@ -37,10 +40,12 @@ class UserSeeder extends Seeder
         $tenantManager->set($cpsp2);
 
         $this->seedUsersForTenant($cpsp2, [
-            ['username' => '2022-23675', 'email' => 'trainee.demo@cpsp2.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Obs & Gynae / Urogynaecology.'],
+            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp2.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Obstetrics & Gynaecology.'],
             ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp2.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => ''],
             ['username' => 'fellow01',     'email' => 'fellow.demo@cpsp2.local',     'type' => 'Fellow',     'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Fellow Demo',     'phone' => '+92-300-2222222', 'bio' => ''],
-            ['username' => '2011-2686',   'email' => 'salar.trainee@cpsp2.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
+            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp2.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
+            ['username' => 'trainee1',     'email' => 'trainee1@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Obs & Gynae.'],
+            ['username' => 'trainee2',     'email' => 'trainee2@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Obs & Gynae.'],
         ]);
     }
 
@@ -54,14 +59,23 @@ class UserSeeder extends Seeder
                 ->where('name', $data['type'])
                 ->firstOrFail();
 
+            $role = Role::where('tenant_id', $tenant->id)
+                ->where('name', $data['type'])
+                ->first();
+
             $user = User::withoutGlobalScope('tenant')->updateOrCreate(
                 ['tenant_id' => $tenant->id, 'username' => $data['username']],
                 [
                     'user_type_id' => $userType->id,
+                    'role_id'      => $role?->id,
                     'email'        => $data['email'],
                     'password'     => $passwordHash,
                 ]
             );
+
+            if ($role) {
+                $user->roles()->syncWithoutDetaching([$role->id]);
+            }
 
             UserProfile::updateOrCreate(
                 ['user_id' => $user->id],

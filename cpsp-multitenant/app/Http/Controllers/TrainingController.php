@@ -85,7 +85,18 @@ class TrainingController extends Controller
         $formOld   = session()->pull('form_old', []);
         $formErrors = session()->pull('form_errors', []);
 
-        return view('training.create', compact('program', 'compTree', 'formOld', 'formErrors'));
+        $tenant            = $this->tenantManager->get();
+        $availablePrograms = $tenant ? $tenant->getAvailablePrograms() : ['MD' => 'MD', 'IMM' => 'IMM'];
+        $formTypes         = \App\Services\LookupService::formTypes();
+        $levels            = \App\Services\LookupService::levels();
+        $outcomes          = \App\Services\LookupService::outcomes();
+        $genders           = \App\Services\LookupService::genders();
+        $ageUnits          = \App\Services\LookupService::ageUnits();
+
+        return view('training.create', compact(
+            'program', 'compTree', 'formOld', 'formErrors',
+            'availablePrograms', 'formTypes', 'levels', 'outcomes', 'genders', 'ageUnits', 'tenant'
+        ));
     }
 
     public function store(Request $request): RedirectResponse
