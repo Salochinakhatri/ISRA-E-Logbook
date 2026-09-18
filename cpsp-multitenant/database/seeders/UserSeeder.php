@@ -27,12 +27,20 @@ class UserSeeder extends Seeder
         $tenantManager->set($cpsp1);
 
         $this->seedUsersForTenant($cpsp1, [
-            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp1.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Internal Medicine.'],
-            ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp1.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => ''],
+            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp1.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Internal Medicine.', 'supervisor' => 'supervisor01'],
+            ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp1.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => 'Supervisor 1'],
+            ['username' => 'supervisor02', 'email' => 'supervisor2@cpsp1.local',     'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Two',  'phone' => '+92-300-3333333', 'bio' => 'Supervisor 2'],
             ['username' => 'fellow01',     'email' => 'fellow.demo@cpsp1.local',     'type' => 'Fellow',     'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Fellow Demo',     'phone' => '+92-300-2222222', 'bio' => ''],
-            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp1.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
-            ['username' => 'trainee1',     'email' => 'trainee1@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Medicine.'],
-            ['username' => 'trainee2',     'email' => 'trainee2@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Medicine.'],
+            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp1.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => '', 'supervisor' => 'supervisor01'],
+            ['username' => 'trainee1',     'email' => 'trainee1@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Supervisor Demo).', 'supervisor' => 'supervisor01'],
+            ['username' => 'trainee2',     'email' => 'trainee2@cpsp1.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Supervisor Two).', 'supervisor' => 'supervisor02'],
+            // Supervisors Asghar & Hafiz with their assigned trainees
+            ['username' => 'asghar',       'email' => 'asghar@cpsp1.local',           'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Asghar',          'phone' => '+92-300-1112233', 'bio' => 'Consultant & Clinical Supervisor'],
+            ['username' => 'hafiz',        'email' => 'hafiz@cpsp1.local',            'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Hafiz',           'phone' => '+92-300-1114455', 'bio' => 'Consultant & Clinical Supervisor'],
+            ['username' => 'salochina',    'email' => 'salochina@cpsp1.local',        'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Salochina',       'phone' => '+92-300-2220001', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Asghar)', 'supervisor' => 'asghar'],
+            ['username' => 'maria',        'email' => 'maria@cpsp1.local',            'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Maria',           'phone' => '+92-300-2220002', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Asghar)', 'supervisor' => 'asghar'],
+            ['username' => 'amarta',       'email' => 'amarta@cpsp1.local',           'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Amarta',          'phone' => '+92-300-2220003', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Hafiz)', 'supervisor' => 'hafiz'],
+            ['username' => 'iqra',         'email' => 'iqra@cpsp1.local',             'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Iqra',            'phone' => '+92-300-2220004', 'bio' => 'Trainee Resident in Medicine (Supervised by Dr. Hafiz)', 'supervisor' => 'hafiz'],
         ]);
 
         // ── Users for cpsp2.test ─────────────────────────────────────────────
@@ -40,12 +48,13 @@ class UserSeeder extends Seeder
         $tenantManager->set($cpsp2);
 
         $this->seedUsersForTenant($cpsp2, [
-            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp2.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Obstetrics & Gynaecology.'],
-            ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp2.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => ''],
+            ['username' => '2022-23675',   'email' => 'trainee.demo@cpsp2.local',     'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Trainee Demo',    'phone' => '+92-300-0000000', 'bio' => 'Trainee in Obstetrics & Gynaecology.', 'supervisor' => 'supervisor01'],
+            ['username' => 'supervisor01', 'email' => 'supervisor.demo@cpsp2.local', 'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Demo', 'phone' => '+92-300-1111111', 'bio' => 'Supervisor 1'],
+            ['username' => 'supervisor02', 'email' => 'supervisor2@cpsp2.local',     'type' => 'Supervisor', 'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Supervisor Two',  'phone' => '+92-300-3333333', 'bio' => 'Supervisor 2'],
             ['username' => 'fellow01',     'email' => 'fellow.demo@cpsp2.local',     'type' => 'Fellow',     'hash' => self::DEMO_HASH,  'full_name' => 'Dr. Fellow Demo',     'phone' => '+92-300-2222222', 'bio' => ''],
-            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp2.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => ''],
-            ['username' => 'trainee1',     'email' => 'trainee1@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Obs & Gynae.'],
-            ['username' => 'trainee2',     'email' => 'trainee2@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Obs & Gynae.'],
+            ['username' => '2011-2686',     'email' => 'salar.trainee@cpsp2.local',   'type' => 'Trainee',    'hash' => self::SALAR_HASH, 'full_name' => 'Dr. Salar',           'phone' => '',                'bio' => '', 'supervisor' => 'supervisor01'],
+            ['username' => 'trainee1',     'email' => 'trainee1@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 1',           'phone' => '+92-300-1000001', 'bio' => 'Trainee Resident in Obs & Gynae (Supervised by Dr. Supervisor Demo).', 'supervisor' => 'supervisor01'],
+            ['username' => 'trainee2',     'email' => 'trainee2@cpsp2.local',       'type' => 'Trainee',    'hash' => self::DEMO_HASH,  'full_name' => 'Trainee 2',           'phone' => '+92-300-1000002', 'bio' => 'Trainee Resident in Obs & Gynae (Supervised by Dr. Supervisor Two).', 'supervisor' => 'supervisor02'],
         ]);
     }
 
@@ -86,6 +95,21 @@ class UserSeeder extends Seeder
                     'profile_image' => '',
                 ]
             );
+        }
+
+        // Link trainees to their assigned supervisors
+        foreach ($users as $data) {
+            if (!empty($data['supervisor'])) {
+                $trainee = User::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->where('username', $data['username'])->first();
+                $supervisor = User::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->where('username', $data['supervisor'])->first();
+                if ($trainee && $supervisor) {
+                    $trainee->update(['supervisor_id' => $supervisor->id]);
+                    \Illuminate\Support\Facades\DB::table('supervisor_trainee')->updateOrInsert(
+                        ['supervisor_id' => $supervisor->id, 'trainee_id' => $trainee->id],
+                        ['updated_at' => now(), 'created_at' => now()]
+                    );
+                }
+            }
         }
     }
 }

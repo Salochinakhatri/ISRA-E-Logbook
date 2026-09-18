@@ -54,9 +54,8 @@ function training_outcome_options(): array
 function training_program_options(): array
 {
     return [
-        '2' => 'IMM',
-        '3' => 'MCPS',
-        '4' => 'FCPS-II',
+        'MS'  => 'MS',
+        'DGO' => 'DGO',
     ];
 }
 
@@ -94,7 +93,12 @@ function training_program_label(string $id): string
     if ($id === '') {
         return '—';
     }
-    $m = training_program_options();
+    $legacy = [
+        '2' => 'IMM',
+        '3' => 'MCPS',
+        '4' => 'FCPS-II',
+    ];
+    $m = training_program_options() + $legacy;
 
     return $m[$id] ?? $id;
 }

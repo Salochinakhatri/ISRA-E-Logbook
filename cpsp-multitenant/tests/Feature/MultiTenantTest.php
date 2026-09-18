@@ -530,4 +530,378 @@ class MultiTenantTest extends TestCase
         $traineeType->delete();
         $newTenant->delete();
     }
+
+    public function test_supervisor_trainee_assignment_and_request_isolation(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+        $sup1 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'supervisor01')->firstOrFail();
+        $sup2 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'supervisor02')->firstOrFail();
+        $trainee1 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'trainee1')->firstOrFail();
+        $trainee2 = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'trainee2')->firstOrFail();
+
+        // Ensure assignments: Trainee 1 belongs to Supervisor 1, Trainee 2 belongs to Supervisor 2
+        $trainee1->update(['supervisor_id' => $sup1->id]);
+        $trainee2->update(['supervisor_id' => $sup2->id]);
+
+        $this->assertEquals($sup1->id, $trainee1->fresh()->supervisor_id);
+        $this->assertEquals($sup2->id, $trainee2->fresh()->supervisor_id);
+
+        // Trainee 1 creates a training entry
+        $entry1 = TrainingEntry::withoutGlobalScope('tenant')->create([
+            'tenant_id'         => $cpsp1->id,
+            'user_id'           => $trainee1->id,
+            'supervisor_id'     => $sup1->id,
+            'entry_type'        => 'training',
+            'form_type'         => '1',
+            'hospt_reg_no'      => 'REG-SUP1-T1-999',
+            'pt_diagnosis'      => 'Supervisor1 Specific Diagnosis',
+            'brief_desc'        => 'Procedure under Supervisor 1',
+            'level_id'          => '2',
+            'outcome_id'        => '1',
+            'under_sup_name'    => 'Dr. Supervisor Demo',
+            'pt_gender'         => 'Male',
+            'pt_age'            => '30',
+            'pt_age_type'       => 'Year[s]',
+            'std_post'          => 'Yes',
+            'entry_status'      => 'Awaiting Approval',
+        ]);
+
+        // Supervisor 1 logs in and visits review page: should SEE entry1
+        $responseSup1 = $this->withSession([
+            'user_id'      => $sup1->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $sup1->user_type_id,
+            'username'     => $sup1->username,
+            'user_type'    => 'Supervisor',
+        ])->get('http://cpsp1.test/supervisor/entries?status=Awaiting+Approval');
+
+        $responseSup1->assertStatus(200);
+        $responseSup1->assertSee('Supervisor1 Specific Diagnosis');
+        $responseSup1->assertSee('REG-SUP1-T1-999');
+
+        // Supervisor 2 logs in and visits review page: should NOT SEE entry1
+        $responseSup2 = $this->withSession([
+            'user_id'      => $sup2->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $sup2->user_type_id,
+            'username'     => $sup2->username,
+            'user_type'    => 'Supervisor',
+        ])->get('http://cpsp1.test/supervisor/entries?status=Awaiting+Approval');
+
+        $responseSup2->assertStatus(200);
+        $responseSup2->assertDontSee('Supervisor1 Specific Diagnosis');
+        $responseSup2->assertDontSee('REG-SUP1-T1-999');
+
+        // Supervisor 2 attempts to view detail of entry1: should be 403 Forbidden!
+        $unauthorizedDetail = $this->withSession([
+            'user_id'      => $sup2->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $sup2->user_type_id,
+            'username'     => $sup2->username,
+            'user_type'    => 'Supervisor',
+        ])->get('http://cpsp1.test/supervisor/entries/training/' . $entry1->id);
+
+        $unauthorizedDetail->assertStatus(403);
+
+        // Supervisor 2 attempts to approve entry1: should be 403 Forbidden!
+        $unauthorizedApprove = $this->withSession([
+            'user_id'      => $sup2->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $sup2->user_type_id,
+            'username'     => $sup2->username,
+            'user_type'    => 'Supervisor',
+        ])->post('http://cpsp1.test/supervisor/entries/training/' . $entry1->id . '/status', [
+            'status' => 'Approved',
+        ]);
+
+        $unauthorizedApprove->assertStatus(403);
+        $this->assertEquals('Awaiting Approval', $entry1->fresh()->entry_status);
+
+        // Supervisor 1 approves entry1: should succeed!
+        $authorizedApprove = $this->withSession([
+            'user_id'      => $sup1->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $sup1->user_type_id,
+            'username'     => $sup1->username,
+            'user_type'    => 'Supervisor',
+        ])->post('http://cpsp1.test/supervisor/entries/training/' . $entry1->id . '/status', [
+            'status' => 'Approved',
+            'supervisor_remarks' => 'Approved by assigned supervisor',
+        ]);
+
+        $authorizedApprove->assertRedirect();
+        $this->assertEquals('Approved', $entry1->fresh()->entry_status);
+        $this->assertEquals($sup1->id, $entry1->fresh()->approved_by);
+
+        // Clean up
+        $entry1->delete();
+    }
+
+    public function test_asghar_hafiz_and_assigned_trainees_salochina_maria_amarta_iqra(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+
+        $asghar = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'asghar')->firstOrFail();
+        $hafiz = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'hafiz')->firstOrFail();
+        $salochina = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'salochina')->firstOrFail();
+        $maria = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'maria')->firstOrFail();
+        $amarta = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'amarta')->firstOrFail();
+        $iqra = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'iqra')->firstOrFail();
+
+        // Check roles & types
+        $this->assertTrue($asghar->isSupervisor());
+        $this->assertTrue($hafiz->isSupervisor());
+        $this->assertTrue($salochina->isTrainee());
+        $this->assertTrue($maria->isTrainee());
+        $this->assertTrue($amarta->isTrainee());
+        $this->assertTrue($iqra->isTrainee());
+
+        // Check assigned supervisors
+        $this->assertEquals($asghar->id, $salochina->supervisor_id);
+        $this->assertEquals($asghar->id, $maria->supervisor_id);
+        $this->assertEquals($hafiz->id, $amarta->supervisor_id);
+        $this->assertEquals($hafiz->id, $iqra->supervisor_id);
+
+        // Check Asghar's assigned trainees
+        $asgharTraineeIds = $asghar->getAssignedTraineeIds();
+        $this->assertContains($salochina->id, $asgharTraineeIds);
+        $this->assertContains($maria->id, $asgharTraineeIds);
+        $this->assertNotContains($amarta->id, $asgharTraineeIds);
+        $this->assertNotContains($iqra->id, $asgharTraineeIds);
+
+        // Check Hafiz's assigned trainees
+        $hafizTraineeIds = $hafiz->getAssignedTraineeIds();
+        $this->assertContains($amarta->id, $hafizTraineeIds);
+        $this->assertContains($iqra->id, $hafizTraineeIds);
+        $this->assertNotContains($salochina->id, $hafizTraineeIds);
+        $this->assertNotContains($maria->id, $hafizTraineeIds);
+
+        // Salochina submits a training entry
+        $salochinaEntry = TrainingEntry::withoutGlobalScope('tenant')->create([
+            'tenant_id'         => $cpsp1->id,
+            'user_id'           => $salochina->id,
+            'supervisor_id'     => $asghar->id,
+            'entry_type'        => 'training',
+            'form_type'         => '1',
+            'hospt_reg_no'      => 'SALO-001',
+            'pt_diagnosis'      => 'Salochina Patient Case',
+            'brief_desc'        => 'Case managed under Dr. Asghar',
+            'level_id'          => '2',
+            'outcome_id'        => '1',
+            'under_sup_name'    => 'Dr. Asghar',
+            'pt_gender'         => 'Female',
+            'pt_age'            => '28',
+            'pt_age_type'       => 'Year[s]',
+            'std_post'          => 'Yes',
+            'entry_status'      => 'Awaiting Approval',
+        ]);
+
+        // Amarta submits a training entry
+        $amartaEntry = TrainingEntry::withoutGlobalScope('tenant')->create([
+            'tenant_id'         => $cpsp1->id,
+            'user_id'           => $amarta->id,
+            'supervisor_id'     => $hafiz->id,
+            'entry_type'        => 'training',
+            'form_type'         => '1',
+            'hospt_reg_no'      => 'AMAR-001',
+            'pt_diagnosis'      => 'Amarta Patient Case',
+            'brief_desc'        => 'Case managed under Dr. Hafiz',
+            'level_id'          => '2',
+            'outcome_id'        => '1',
+            'under_sup_name'    => 'Dr. Hafiz',
+            'pt_gender'         => 'Male',
+            'pt_age'            => '45',
+            'pt_age_type'       => 'Year[s]',
+            'std_post'          => 'Yes',
+            'entry_status'      => 'Awaiting Approval',
+        ]);
+
+        // Dr. Asghar logs in
+        $responseAsghar = $this->withSession([
+            'user_id'      => $asghar->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $asghar->user_type_id,
+            'username'     => $asghar->username,
+            'user_type'    => 'Supervisor',
+        ])->get('http://cpsp1.test/supervisor/entries?status=Awaiting+Approval');
+
+        $responseAsghar->assertStatus(200);
+        $responseAsghar->assertSee('Salochina Patient Case');
+        $responseAsghar->assertDontSee('Amarta Patient Case');
+
+        // Dr. Hafiz logs in
+        $responseHafiz = $this->withSession([
+            'user_id'      => $hafiz->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $hafiz->user_type_id,
+            'username'     => $hafiz->username,
+            'user_type'    => 'Supervisor',
+        ])->get('http://cpsp1.test/supervisor/entries?status=Awaiting+Approval');
+
+        $responseHafiz->assertStatus(200);
+        $responseHafiz->assertSee('Amarta Patient Case');
+        $responseHafiz->assertDontSee('Salochina Patient Case');
+
+        // Clean up
+        $salochinaEntry->delete();
+        $amartaEntry->delete();
+    }
+
+    public function test_manual_supervisor_entry_and_validation_error_with_input_retention(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+        $asghar = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'asghar')->firstOrFail();
+        $salochina = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'salochina')->firstOrFail();
+
+        // 1. Visit form: should have manual input 'under_sup_name' and NO dropdown for supervisor_id
+        $createPage = $this->withSession([
+            'user_id'      => $salochina->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $salochina->user_type_id,
+            'username'     => $salochina->username,
+            'user_type'    => 'Trainee',
+        ])->get('http://cpsp1.test/training/create');
+
+        $createPage->assertStatus(200);
+        $createPage->assertSee('name="under_sup_name"', false);
+        $createPage->assertDontSee('<select name="supervisor_id"', false);
+
+        // 2. Submit incomplete form (fill some fields, leave required ones blank)
+        $incompletePost = $this->withSession([
+            'user_id'      => $salochina->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $salochina->user_type_id,
+            'username'     => $salochina->username,
+            'user_type'    => 'Trainee',
+        ])->from('http://cpsp1.test/training/create')->post('http://cpsp1.test/training', [
+            'hospt_reg_no'   => 'RETAIN-TEST-5555',
+            'pt_diagnosis'   => 'Retained Test Diagnosis',
+            'under_sup_name' => 'Dr. Asghar',
+            // Missing: form_type, date_of_admission, pt_gender, pt_age, pt_age_type, level_id, outcome_id, brief_desc, std_post
+        ]);
+
+        $incompletePost->assertRedirect('http://cpsp1.test/training/create');
+        $incompletePost->assertSessionHas('flash_err', 'Please fill all the required fields.');
+        $incompletePost->assertSessionHasErrors(['form_type', 'date_of_admission', 'pt_gender', 'pt_age', 'level_id', 'outcome_id', 'brief_desc', 'std_post']);
+
+        // 3. Test input retention and error banner when redirected back
+        $redirectResponse = $this->withSession([
+            'user_id'      => $salochina->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $salochina->user_type_id,
+            'username'     => $salochina->username,
+            'user_type'    => 'Trainee',
+        ])->followingRedirects()->from('http://cpsp1.test/training/create')->post('http://cpsp1.test/training', [
+            'hospt_reg_no'   => 'RETAIN-TEST-5555',
+            'pt_diagnosis'   => 'Retained Test Diagnosis',
+            'under_sup_name' => 'Dr. Asghar',
+        ]);
+
+        $redirectResponse->assertStatus(200);
+        $redirectResponse->assertSee('Please fill all the required fields.');
+        $redirectResponse->assertSee('value="RETAIN-TEST-5555"', false);
+        $redirectResponse->assertSee('value="Retained Test Diagnosis"', false);
+
+        // 4. Submit fully completed form with manual supervisor text "Dr. Asghar"
+        $completePost = $this->withSession([
+            'user_id'      => $salochina->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $salochina->user_type_id,
+            'username'     => $salochina->username,
+            'user_type'    => 'Trainee',
+        ])->post('http://cpsp1.test/training', [
+            'form_type'         => 'Indoor',
+            'hospt_reg_no'      => 'REG-MANUAL-SUP-1',
+            'date_of_admission' => '05-01-2025',
+            'pt_gender'         => 'Female',
+            'pt_age'            => '29',
+            'pt_age_type'       => 'Year[s]',
+            'pt_diagnosis'      => 'Manual Supervisor Routing Diagnosis',
+            'under_sup_name'    => 'Dr. Asghar',
+            'level_id'          => 'Resident / Fellow',
+            'outcome_id'        => 'Recovered',
+            'brief_desc'        => 'Full description',
+            'entry_for_prog_id' => 'MD',
+            'std_post'          => 'Yes',
+        ]);
+
+        $completePost->assertRedirect('http://cpsp1.test/training');
+
+        $createdEntry = TrainingEntry::where('hospt_reg_no', 'REG-MANUAL-SUP-1')->first();
+        $this->assertNotNull($createdEntry);
+        $this->assertEquals($asghar->id, $createdEntry->supervisor_id);
+        $this->assertEquals('Dr. Asghar', $createdEntry->under_sup_name);
+
+        $createdEntry->delete();
+    }
+
+    public function test_rotational_manual_supervisor_entry_and_validation_retention(): void
+    {
+        $cpsp1 = Tenant::where('domain', 'cpsp1.test')->firstOrFail();
+        $hafiz = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'hafiz')->firstOrFail();
+        $amarta = User::withoutGlobalScope('tenant')->where('tenant_id', $cpsp1->id)->where('username', 'amarta')->firstOrFail();
+
+        // 1. Visit rotational form: manual input 'under_sup_name', NO supervisor_id dropdown
+        $createPage = $this->withSession([
+            'user_id'      => $amarta->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $amarta->user_type_id,
+            'username'     => $amarta->username,
+            'user_type'    => 'Trainee',
+        ])->get('http://cpsp1.test/rotational/create');
+
+        $createPage->assertStatus(200);
+        $createPage->assertSee('name="under_sup_name"', false);
+        $createPage->assertDontSee('<select name="supervisor_id"', false);
+
+        // 2. Submit incomplete rotational form: verify error and input retention
+        $redirectResponse = $this->withSession([
+            'user_id'      => $amarta->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $amarta->user_type_id,
+            'username'     => $amarta->username,
+            'user_type'    => 'Trainee',
+        ])->followingRedirects()->from('http://cpsp1.test/rotational/create')->post('http://cpsp1.test/rotational', [
+            'hospt_reg_no'   => 'ROT-RETAIN-777',
+            'pt_diagnosis'   => 'Rotational Retained Diagnosis',
+            'under_sup_name' => 'Dr. Hafiz',
+        ]);
+
+        $redirectResponse->assertStatus(200);
+        $redirectResponse->assertSee('Please fill all the required fields.');
+        $redirectResponse->assertSee('value="ROT-RETAIN-777"', false);
+        $redirectResponse->assertSee('value="Rotational Retained Diagnosis"', false);
+
+        // 3. Complete and submit rotational entry with manual supervisor
+        $completePost = $this->withSession([
+            'user_id'      => $amarta->id,
+            'tenant_id'    => $cpsp1->id,
+            'user_type_id' => $amarta->user_type_id,
+            'username'     => $amarta->username,
+            'user_type'    => 'Trainee',
+        ])->post('http://cpsp1.test/rotational', [
+            'form_type'         => 'Outdoor',
+            'entry_for_prog_id' => 'MD',
+            'hospt_reg_no'      => 'ROT-MANUAL-1',
+            'date_of_admission' => '10-02-2025',
+            'pt_gender'         => 'Male',
+            'pt_age'            => '45',
+            'pt_age_type'       => 'Year[s]',
+            'pt_diagnosis'      => 'Rotational Cardio Diagnosis',
+            'under_sup_name'    => 'Dr. Hafiz',
+            'level_id'          => 'Resident / Fellow',
+            'outcome_id'        => 'Recovered',
+            'brief_desc'        => 'Cardio rotational details',
+            'std_post'          => 'Yes',
+        ]);
+
+        $completePost->assertRedirect('http://cpsp1.test/rotational');
+
+        $createdRot = \App\Models\RotationalEntry::where('hospt_reg_no', 'ROT-MANUAL-1')->first();
+        $this->assertNotNull($createdRot);
+        $this->assertEquals($hafiz->id, $createdRot->supervisor_id);
+        $this->assertEquals('Dr. Hafiz', $createdRot->under_sup_name);
+
+        $createdRot->delete();
+    }
 }

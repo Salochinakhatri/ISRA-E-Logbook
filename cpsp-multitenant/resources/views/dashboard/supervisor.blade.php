@@ -88,6 +88,9 @@
             <div class="sup-panel__title">
                 <i class="fa-regular fa-circle-dot"></i>
                 <span>Current Trainees - Awaiting Approval Entries</span>
+                @if(!$user->isAdmin())
+                    <span class="tab-badge tab-badge--info" style="margin-left: 10px; font-size: 11px; padding: 2px 8px;">My Assigned Trainees</span>
+                @endif
             </div>
             <button type="button" class="sup-panel__toggle" data-target="#currentTraineesContent" aria-label="Toggle panel">
                 <i class="fa-solid fa-minus"></i>

@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 /**
- * Obstetrics & Gynaecology combined competency tree.
- * Cleaned of program tags (IMM / FCPS).
+ * CPSP FCPS – Obstetrics & Gynaecology / Urogynaecology combined competency tree.
+ * This is the SAME tree used for BOTH UROGYNAECOLOGY (FCPS) and OBSTETRICS AND GYNAECOLOGY (FCPS).
+ * Extracted directly from the live CPSP e-Logbook portal.
  *
  * @return list<array{id:int,label:string,children:list<array{id:int,label:string}>}>
  */
 return [
+    // ───   (Part-I) Groups ────────────────────────────────────────────────────
     [
         'id'       => 301,
         'label'    => 'Gynaecology - C A OPD & Ward',
@@ -115,8 +117,10 @@ return [
             ['id' => 3104, 'label' => 'Contraception counseling including post abortion family planning (2016)'],
             ['id' => 3105, 'label' => 'Insertion of IUCD including PPIUCD (2016)'],
             ['id' => 3106, 'label' => 'Hystero-salpingography (injection of dye)'],
+           
         ],
     ],
+    // ─── FCPS-II (Part-II) Groups ───────────────────────────────────────────────
     [
         'id'       => 307,
         'label'    => 'Gynaecology - Operative Skills',
@@ -158,7 +162,7 @@ return [
     ],
     [
         'id'       => 309,
-        'label'    => 'Gynaecology (OPD / WARD)',
+        'label'    => 'Gynaecology(OPD / WARD )',
         'children' => [
             ['id' => 3170, 'label' => 'Eliciting Pertinent history'],
             ['id' => 3171, 'label' => 'Performing Physical examination'],
@@ -237,6 +241,7 @@ return [
             ['id' => 3241, 'label' => 'Contraception Counselling / Advice'],
             ['id' => 3242, 'label' => 'Postpartum family planning / IUCD'],
             ['id' => 3243, 'label' => 'Counseling for Breast feeding'],
+            
         ],
     ],
 ];

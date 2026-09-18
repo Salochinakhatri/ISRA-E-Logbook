@@ -50,15 +50,19 @@ class CompetencyService
 
         $catalogType = 'fcps_imm';
         try {
-            $tenant = app(\App\Services\TenantManager::class)->getTenant();
+            $tenant = app(\App\Services\TenantManager::class)->get();
             if ($tenant) {
                 $catalogType = $tenant->getCompetencyType();
             }
         } catch (\Throwable) {}
 
         $prog = strtolower(trim($program));
-        if ($catalogType === 'obgyn' || in_array($prog, ['obgyn', 'ms', 'dgo'], true)) {
-            $raw = require $dataDir . '/competency_obgyn.php';
+        if ($catalogType === 'obgyn' || in_array($prog, ['obgyn', 'urogyn', 'ms', 'dgo'], true)) {
+            if ($prog === 'urogyn') {
+                $raw = require $dataDir . '/competency_urogyn.php';
+            } else {
+                $raw = require $dataDir . '/competency_obgyn.php';
+            }
         } else {
             $raw = array_merge(
                 require $dataDir . '/competency_imm.php',
@@ -66,22 +70,15 @@ class CompetencyService
             );
         }
 
-        return array_map(function ($group) {
-            $group['label'] = $this->cleanLabel((string) $group['label']);
-            $group['children'] = array_map(function ($child) {
-                $child['label'] = $this->cleanLabel((string) $child['label']);
-                return $child;
-            }, $group['children'] ?? []);
-            return $group;
-        }, $raw);
+        return $raw;
     }
 
     /**
-     * Remove program indicator suffixes like (IMM), (FCPS - II), (FCPS-III) from labels.
+     * Preserves exact label as defined in the curriculum data files.
      */
     public function cleanLabel(string $s): string
     {
-        return trim((string) preg_replace('/\s*\((?:IMM|FCPS(?:\s*-\s*[I|V|X\d]+)?)\)\s*/i', '', $s));
+        return trim($s);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\PresentedEntry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class PresentedController extends Controller
@@ -27,7 +28,7 @@ class PresentedController extends Controller
     public function create(Request $request): View
     {
         $program    = (string) $request->input('program', '');
-        $formOld    = session()->pull('form_old', []);
+        $formOld    = array_merge(session()->pull('form_old', []), session()->getOldInput());
         $formErrors = session()->pull('form_errors', []);
 
         return view('presented.create', compact('program', 'formOld', 'formErrors'));
@@ -38,25 +39,44 @@ class PresentedController extends Controller
         $userId  = (int) session('user_id');
         $program = (string) $request->input('program', '');
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'rec_date'  => ['required', 'string'],
             'rec_title' => ['required', 'string', 'max:500'],
             'rec_venue' => ['required', 'string', 'max:500'],
             'std_post'  => ['required', 'in:Yes,No'],
+        ], [
+            'required' => 'The :attribute field is required.',
+        ], [
+            'rec_date'  => 'Presented Date',
+            'rec_title' => 'Title',
+            'rec_venue' => 'Venue',
+            'std_post'  => 'Send to Supervisor',
         ]);
 
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('form_errors', array_merge(['Please fill all the required fields.'], $validator->errors()->all()))
+                ->with('flash_err', 'Please fill all the required fields.');
+        }
+
+        $user = \App\Models\User::with('supervisor')->find($userId);
+        $supervisorId = $user?->supervisor_id ?: (int) (\Illuminate\Support\Facades\DB::table('supervisor_trainee')->where('trainee_id', $userId)->value('supervisor_id') ?: 0) ?: null;
+
         PresentedEntry::create([
-            'user_id'      => $userId,
-            'rec_date'     => $this->parseBritishDate($request->input('rec_date', '')),
-            'rec_title'    => $request->input('rec_title'),
-            'rec_venue'    => $request->input('rec_venue'),
+            'user_id'       => $userId,
+            'supervisor_id' => $supervisorId,
+            'rec_date'      => $this->parseBritishDate($request->input('rec_date', '')),
+            'rec_title'     => $request->input('rec_title'),
+            'rec_venue'     => $request->input('rec_venue'),
             // cpsp1-style
-            'conf_name'    => $request->input('conf_name'),
+            'conf_name'     => $request->input('conf_name'),
             // cpsp2-style
-            'rec_type'     => (string) $request->input('rec_type', ''),
-            'program'      => $program,
-            'std_post'     => $request->input('std_post'),
-            'entry_status' => $request->input('std_post') === 'Yes' ? 'Awaiting Approval' : 'Draft',
+            'rec_type'      => (string) $request->input('rec_type', ''),
+            'program'       => $program,
+            'std_post'      => $request->input('std_post'),
+            'entry_status'  => $request->input('std_post') === 'Yes' ? 'Awaiting Approval' : 'Draft',
         ]);
 
         $params = $program !== '' ? ['program' => $program] : [];

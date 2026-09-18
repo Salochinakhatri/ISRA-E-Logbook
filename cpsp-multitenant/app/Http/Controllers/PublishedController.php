@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\PublishedEntry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class PublishedController extends Controller
@@ -27,7 +28,7 @@ class PublishedController extends Controller
     public function create(Request $request): View
     {
         $program    = (string) $request->input('program', '');
-        $formOld    = session()->pull('form_old', []);
+        $formOld    = array_merge(session()->pull('form_old', []), session()->getOldInput());
         $formErrors = session()->pull('form_errors', []);
 
         return view('published.create', compact('program', 'formOld', 'formErrors'));
@@ -38,24 +39,44 @@ class PublishedController extends Controller
         $userId  = (int) session('user_id');
         $program = (string) $request->input('program', '');
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'pub_date'  => ['required', 'string'],
             'pub_title' => ['required', 'string', 'max:500'],
+            'full_ref'  => ['required', 'string'],
             'std_post'  => ['required', 'in:Yes,No'],
+        ], [
+            'required' => 'The :attribute field is required.',
+        ], [
+            'pub_date'  => 'Published Date',
+            'pub_title' => 'Title',
+            'full_ref'  => 'Full Reference',
+            'std_post'  => 'Send to Supervisor',
         ]);
 
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('form_errors', array_merge(['Please fill all the required fields.'], $validator->errors()->all()))
+                ->with('flash_err', 'Please fill all the required fields.');
+        }
+
+        $user = \App\Models\User::with('supervisor')->find($userId);
+        $supervisorId = $user?->supervisor_id ?: (int) (\Illuminate\Support\Facades\DB::table('supervisor_trainee')->where('trainee_id', $userId)->value('supervisor_id') ?: 0) ?: null;
+
         PublishedEntry::create([
-            'user_id'      => $userId,
-            'pub_date'     => $this->parseBritishDate($request->input('pub_date', '')),
-            'pub_title'    => $request->input('pub_title'),
+            'user_id'       => $userId,
+            'supervisor_id' => $supervisorId,
+            'pub_date'      => $this->parseBritishDate($request->input('pub_date', '')),
+            'pub_title'     => $request->input('pub_title'),
             // cpsp1-style
-            'full_ref'     => $request->input('full_ref'),
+            'full_ref'      => $request->input('full_ref'),
             // cpsp2-style
-            'pub_journal'  => (string) $request->input('pub_journal', ''),
-            'pub_authors'  => (string) $request->input('pub_authors', ''),
-            'program'      => $program,
-            'std_post'     => $request->input('std_post'),
-            'entry_status' => $request->input('std_post') === 'Yes' ? 'Awaiting Approval' : 'Draft',
+            'pub_journal'   => (string) $request->input('pub_journal', ''),
+            'pub_authors'   => (string) $request->input('pub_authors', ''),
+            'program'       => $program,
+            'std_post'      => $request->input('std_post'),
+            'entry_status'  => $request->input('std_post') === 'Yes' ? 'Awaiting Approval' : 'Draft',
         ]);
 
         $params = $program !== '' ? ['program' => $program] : [];

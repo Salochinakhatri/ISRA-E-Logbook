@@ -13,7 +13,7 @@ class TrainingEntry extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'user_id', 'entry_type', 'form_type',
+        'tenant_id', 'user_id', 'supervisor_id', 'entry_type', 'form_type',
         'hospt_reg_no', 'date_of_admission', 'pt_gender', 'pt_age',
         'pt_age_type', 'pt_diagnosis', 'under_sup_name', 'level_id',
         'outcome_id', 'brief_desc', 'entry_for_prog_id', 'program',
@@ -31,6 +31,11 @@ class TrainingEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     public function approvedBy(): BelongsTo

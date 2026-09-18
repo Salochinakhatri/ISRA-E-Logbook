@@ -33,18 +33,38 @@ class SupervisorApprovalController extends Controller
             return redirect()->route('dashboard');
         }
 
+        $isAdmin = $user->isAdmin();
+        $assignedTraineeIds = $user->getAssignedTraineeIds();
+
         $traineeId = $request->query('trainee_id') ? (int) $request->query('trainee_id') : null;
         $typeFilter = strtolower((string) $request->query('type', 'all'));
         $statusFilter = (string) $request->query('status', 'Awaiting Approval');
         $search = trim((string) $request->query('search', ''));
 
-        $trainees = User::where(function ($q) {
-            $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
-              ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
-        })
-            ->with('profile')
-            ->orderBy('username')
-            ->get();
+        if ($isAdmin) {
+            $trainees = User::where(function ($q) {
+                $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
+                  ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
+            })
+                ->with('profile')
+                ->orderBy('username')
+                ->get();
+        } else {
+            $trainees = User::whereIn('id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1])
+                ->with('profile')
+                ->orderBy('username')
+                ->get();
+        }
+
+        // Helper to scope entries to supervisor's assigned trainees or specifically targeted supervisor_id
+        $applySupervisorScope = function ($query) use ($isAdmin, $userId, $assignedTraineeIds) {
+            if (! $isAdmin) {
+                $query->where(function ($q) use ($userId, $assignedTraineeIds) {
+                    $q->where('supervisor_id', $userId)
+                      ->orWhereIn('user_id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1]);
+                });
+            }
+        };
 
         // Build combined entries
         $items = collect();
@@ -52,6 +72,7 @@ class SupervisorApprovalController extends Controller
         if (in_array($typeFilter, ['all', 'training'], true)) {
             $trainings = TrainingEntry::with(['user.profile', 'approvedBy'])
                 ->where('std_post', 'Yes')
+                ->tap($applySupervisorScope)
                 ->when($traineeId, fn($q) => $q->where('user_id', $traineeId))
                 ->when($statusFilter !== 'all' && $statusFilter !== '', fn($q) => $q->where('entry_status', $statusFilter))
                 ->when($search !== '', fn($q) => $q->where(fn($sq) => $sq->where('pt_diagnosis', 'like', "%{$search}%")->orWhere('hospt_reg_no', 'like', "%{$search}%")))
@@ -64,6 +85,7 @@ class SupervisorApprovalController extends Controller
         if (in_array($typeFilter, ['all', 'rotational'], true)) {
             $rotationals = RotationalEntry::with(['user.profile', 'approvedBy'])
                 ->where('std_post', 'Yes')
+                ->tap($applySupervisorScope)
                 ->when($traineeId, fn($q) => $q->where('user_id', $traineeId))
                 ->when($statusFilter !== 'all' && $statusFilter !== '', fn($q) => $q->where('entry_status', $statusFilter))
                 ->when($search !== '', fn($q) => $q->where(fn($sq) => $sq->where('pt_diagnosis', 'like', "%{$search}%")->orWhere('hospt_reg_no', 'like', "%{$search}%")))
@@ -76,6 +98,7 @@ class SupervisorApprovalController extends Controller
         if (in_array($typeFilter, ['all', 'journal'], true)) {
             $journals = JournalEntry::with(['user.profile', 'approvedBy'])
                 ->where('std_post', 'Yes')
+                ->tap($applySupervisorScope)
                 ->when($traineeId, fn($q) => $q->where('user_id', $traineeId))
                 ->when($statusFilter !== 'all' && $statusFilter !== '', fn($q) => $q->where('entry_status', $statusFilter))
                 ->when($search !== '', fn($q) => $q->where(fn($sq) => $sq->where('topic', 'like', "%{$search}%")->orWhere('ref_of_art_disc', 'like', "%{$search}%")))
@@ -88,6 +111,7 @@ class SupervisorApprovalController extends Controller
         if (in_array($typeFilter, ['all', 'presented'], true)) {
             $presenteds = PresentedEntry::with(['user.profile', 'approvedBy'])
                 ->where('std_post', 'Yes')
+                ->tap($applySupervisorScope)
                 ->when($traineeId, fn($q) => $q->where('user_id', $traineeId))
                 ->when($statusFilter !== 'all' && $statusFilter !== '', fn($q) => $q->where('entry_status', $statusFilter))
                 ->when($search !== '', fn($q) => $q->where('rec_title', 'like', "%{$search}%"))
@@ -100,6 +124,7 @@ class SupervisorApprovalController extends Controller
         if (in_array($typeFilter, ['all', 'published'], true)) {
             $publisheds = PublishedEntry::with(['user.profile', 'approvedBy'])
                 ->where('std_post', 'Yes')
+                ->tap($applySupervisorScope)
                 ->when($traineeId, fn($q) => $q->where('user_id', $traineeId))
                 ->when($statusFilter !== 'all' && $statusFilter !== '', fn($q) => $q->where('entry_status', $statusFilter))
                 ->when($search !== '', fn($q) => $q->where('pub_title', 'like', "%{$search}%"))
@@ -114,11 +139,11 @@ class SupervisorApprovalController extends Controller
 
         // Calculate counts for quick filter tabs
         $statusCounts = [
-            'awaiting'    => $this->countSubmittedByStatus('Awaiting Approval', $traineeId, $typeFilter),
-            'approved'    => $this->countSubmittedByStatus('Approved', $traineeId, $typeFilter),
-            'resubmit'    => $this->countSubmittedByStatus('Discuss and Resubmit', $traineeId, $typeFilter),
-            'disapproved' => $this->countSubmittedByStatus('Disapproved', $traineeId, $typeFilter),
-            'all'         => $this->countSubmittedByStatus('all', $traineeId, $typeFilter),
+            'awaiting'    => $this->countSubmittedByStatus('Awaiting Approval', $traineeId, $typeFilter, $user),
+            'approved'    => $this->countSubmittedByStatus('Approved', $traineeId, $typeFilter, $user),
+            'resubmit'    => $this->countSubmittedByStatus('Discuss and Resubmit', $traineeId, $typeFilter, $user),
+            'disapproved' => $this->countSubmittedByStatus('Disapproved', $traineeId, $typeFilter, $user),
+            'all'         => $this->countSubmittedByStatus('all', $traineeId, $typeFilter, $user),
         ];
 
         return view('supervisor.entries', [
@@ -138,9 +163,16 @@ class SupervisorApprovalController extends Controller
      */
     public function show(string $type, int $id): JsonResponse|View
     {
+        $userId = (int) session('user_id');
+        $user = User::find($userId);
+
         $entry = $this->findEntryModel($type, $id);
         if (! $entry) {
             abort(404, 'Entry not found');
+        }
+
+        if ($user && ! $this->canSupervisorAccessEntry($user, $entry)) {
+            abort(403, 'Unauthorized. This entry belongs to a trainee not assigned to you.');
         }
 
         $entry->loadMissing(['user.profile', 'approvedBy']);
@@ -159,6 +191,8 @@ class SupervisorApprovalController extends Controller
     public function updateStatus(Request $request, string $type, int $id): RedirectResponse|JsonResponse
     {
         $supervisorId = (int) session('user_id');
+        $user = User::find($supervisorId);
+
         $validated = $request->validate([
             'status'             => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit,Disapproved'],
             'supervisor_remarks' => ['nullable', 'string', 'max:1000'],
@@ -167,6 +201,10 @@ class SupervisorApprovalController extends Controller
         $entry = $this->findEntryModel($type, $id);
         if (! $entry) {
             abort(404, 'Entry not found');
+        }
+
+        if ($user && ! $this->canSupervisorAccessEntry($user, $entry)) {
+            abort(403, 'Unauthorized. You can only approve entries submitted by your assigned trainees.');
         }
 
         $newStatus = $validated['status'];
@@ -202,6 +240,8 @@ class SupervisorApprovalController extends Controller
     public function bulkUpdateStatus(Request $request): RedirectResponse
     {
         $supervisorId = (int) session('user_id');
+        $user = User::find($supervisorId);
+
         $validated = $request->validate([
             'selected_entries'   => ['required', 'array'],
             'bulk_status'        => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit,Disapproved'],
@@ -222,6 +262,11 @@ class SupervisorApprovalController extends Controller
             $id = (int) $idStr;
             $entry = $this->findEntryModel($type, $id);
             if (! $entry) {
+                continue;
+            }
+
+            // Security check: only allow updating entries assigned to this supervisor
+            if ($user && ! $this->canSupervisorAccessEntry($user, $entry)) {
                 continue;
             }
 
@@ -246,6 +291,27 @@ class SupervisorApprovalController extends Controller
     }
 
     /**
+     * Determine if a supervisor is authorized to access / approve an entry.
+     */
+    private function canSupervisorAccessEntry(User $supervisor, mixed $entry): bool
+    {
+        if ($supervisor->isAdmin()) {
+            return true;
+        }
+
+        if (isset($entry->supervisor_id) && $entry->supervisor_id && (int) $entry->supervisor_id === (int) $supervisor->id) {
+            return true;
+        }
+
+        $assignedTraineeIds = $supervisor->getAssignedTraineeIds();
+        if (in_array((int) $entry->user_id, $assignedTraineeIds, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Find the model instance by type string and id.
      */
     private function findEntryModel(string $type, int $id): mixed
@@ -263,7 +329,7 @@ class SupervisorApprovalController extends Controller
     /**
      * Count submitted entries by status.
      */
-    private function countSubmittedByStatus(string $status, ?int $traineeId, string $typeFilter): int
+    private function countSubmittedByStatus(string $status, ?int $traineeId, string $typeFilter, ?User $user = null): int
     {
         $total = 0;
         $models = [
@@ -274,12 +340,23 @@ class SupervisorApprovalController extends Controller
             'published'  => PublishedEntry::query(),
         ];
 
+        $isAdmin = $user && $user->isAdmin();
+        $assignedTraineeIds = $user ? $user->getAssignedTraineeIds() : [];
+
         foreach ($models as $type => $query) {
             if ($typeFilter !== 'all' && $typeFilter !== $type) {
                 continue;
             }
 
             $query->where('std_post', 'Yes');
+
+            if ($user && ! $isAdmin) {
+                $query->where(function ($sq) use ($user, $assignedTraineeIds) {
+                    $sq->where('supervisor_id', $user->id)
+                       ->orWhereIn('user_id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1]);
+                });
+            }
+
             if ($traineeId) {
                 $query->where('user_id', $traineeId);
             }

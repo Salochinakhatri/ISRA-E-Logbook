@@ -247,6 +247,19 @@
     }
 
     // Prevent double form submission on all forms with class elog-form
+    function resetSubmitButtons() {
+        qsa('button[type="submit"]').forEach(function (btn) {
+            btn.disabled = false;
+            if (btn.dataset.originalHtml) {
+                btn.innerHTML = btn.dataset.originalHtml;
+            } else if (btn.textContent.trim() === "Submitting...") {
+                btn.textContent = "Submit";
+            }
+        });
+    }
+    window.resetSubmitButtons = resetSubmitButtons;
+    window.addEventListener("pageshow", resetSubmitButtons);
+
     qsa("form.elog-form").forEach(function (form) {
         form.addEventListener("submit", function (e) {
             // Trigger TinyMCE save to update textarea values
@@ -264,8 +277,16 @@
                     e.preventDefault();
                     return false;
                 }
+                if (!submitBtn.dataset.originalHtml) {
+                    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+                }
                 // Short timeout to let the submit event bubble/propagate before disabling
                 setTimeout(function () {
+                    // If submission was prevented by client-side validation, do NOT disable!
+                    if (e.defaultPrevented) {
+                        resetSubmitButtons();
+                        return;
+                    }
                     submitBtn.disabled = true;
                     var textNode = Array.prototype.slice.call(submitBtn.childNodes).filter(function(node) {
                         return node.nodeType === Node.TEXT_NODE;
@@ -273,7 +294,7 @@
                     if (textNode) {
                         textNode.textContent = " Submitting...";
                     }
-                }, 10);
+                }, 20);
             }
         });
     });

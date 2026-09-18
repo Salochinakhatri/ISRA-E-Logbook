@@ -53,7 +53,7 @@ class TenantSeeder extends Seeder
                 ],
                 'competency_type' => 'obgyn',
                 'settings'        => [
-                    'portal_title' => 'ePortal – Obstetrics & Gynaecology',
+                    'portal_title' => 'Gynae & OBS Portal',
                 ],
                 'is_active'       => true,
             ]
@@ -64,6 +64,26 @@ class TenantSeeder extends Seeder
                 'tenant_id' => $cpsp2->id,
                 'name'      => $typeName,
             ]);
+        }
+
+        // Seed per-tenant roles
+        $rolesToSeed = [
+            ['name' => 'Trainee',       'slug' => 'trainee',       'description' => 'Postgraduate medical resident/trainee'],
+            ['name' => 'Supervisor',    'slug' => 'supervisor',    'description' => 'Clinical supervisor and consultant'],
+            ['name' => 'Fellow',        'slug' => 'fellow',        'description' => 'Post-fellowship subspecialty trainee'],
+            ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'System administrator'],
+        ];
+
+        foreach ([$cpsp1, $cpsp2] as $t) {
+            foreach ($rolesToSeed as $r) {
+                \App\Models\Role::firstOrCreate([
+                    'tenant_id' => $t->id,
+                    'slug'      => $r['slug'],
+                ], [
+                    'name'        => $r['name'],
+                    'description' => $r['description'],
+                ]);
+            }
         }
     }
 }

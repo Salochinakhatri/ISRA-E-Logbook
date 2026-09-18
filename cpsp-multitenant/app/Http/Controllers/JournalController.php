@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\JournalEntry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class JournalController extends Controller
@@ -18,7 +19,7 @@ class JournalController extends Controller
 
         $entries = JournalEntry::where('user_id', $userId)
             ->when($program !== '', fn($q) => $q->where('program', $program))
-            ->latest('created_at')
+            ->latest('date_of_diss')
             ->get();
 
         return view('journal.index', compact('entries', 'program'));
@@ -27,7 +28,7 @@ class JournalController extends Controller
     public function create(Request $request): View
     {
         $program    = (string) $request->input('program', '');
-        $formOld    = session()->pull('form_old', []);
+        $formOld    = array_merge(session()->pull('form_old', []), session()->getOldInput());
         $formErrors = session()->pull('form_errors', []);
 
         return view('journal.create', compact('program', 'formOld', 'formErrors'));
@@ -38,14 +39,32 @@ class JournalController extends Controller
         $userId  = (int) session('user_id');
         $program = (string) $request->input('program', '');
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'date_of_diss'    => ['required', 'string'],
             'fac_by'          => ['required', 'string', 'max:255'],
             'std_post'        => ['required', 'in:Yes,No'],
+        ], [
+            'required' => 'The :attribute field is required.',
+        ], [
+            'date_of_diss' => 'Date of Discussion',
+            'fac_by'       => 'Facilitated by',
+            'std_post'     => 'Send to Supervisor',
         ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('form_errors', array_merge(['Please fill all the required fields.'], $validator->errors()->all()))
+                ->with('flash_err', 'Please fill all the required fields.');
+        }
+
+        $user = \App\Models\User::with('supervisor')->find($userId);
+        $supervisorId = $user?->supervisor_id ?: (int) (\Illuminate\Support\Facades\DB::table('supervisor_trainee')->where('trainee_id', $userId)->value('supervisor_id') ?: 0) ?: null;
 
         JournalEntry::create([
             'user_id'         => $userId,
+            'supervisor_id'   => $supervisorId,
             'date_of_diss'    => $this->parseBritishDate($request->input('date_of_diss', '')),
             'fac_by'          => $request->input('fac_by'),
             // cpsp1-style: combined reference

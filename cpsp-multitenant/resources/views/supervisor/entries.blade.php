@@ -35,7 +35,7 @@
                 <div>
                     <label class="control-label" for="filterTrainee">Trainee</label>
                     <select name="trainee_id" id="filterTrainee" class="field__control">
-                        <option value="">All Trainees</option>
+                        <option value="">{{ $user->isAdmin() ? 'All Trainees' : 'All My Trainees (' . $trainees->count() . ')' }}</option>
                         @foreach($trainees as $t)
                             <option value="{{ $t->id }}" {{ (string)$traineeId === (string)$t->id ? 'selected' : '' }}>
                                 {{ $t->profile?->full_name ?: $t->username }} ({{ $t->username }})

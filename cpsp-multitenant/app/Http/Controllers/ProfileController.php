@@ -26,13 +26,24 @@ class ProfileController extends Controller
         }
 
         // Supervisor specific stats
+        $isAdmin = $user->isAdmin();
+        $assignedTraineeIds = $user->getAssignedTraineeIds();
+
+        $entryScope = function ($q) use ($isAdmin, $userId, $assignedTraineeIds) {
+            if (! $isAdmin) {
+                $q->where(function ($sq) use ($userId, $assignedTraineeIds) {
+                    $sq->where('supervisor_id', $userId)
+                       ->orWhereIn('user_id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1]);
+                });
+            }
+        };
+
         $stats = [
-            'trainees_count' => User::where(function ($q) {
-                $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
-                  ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
-            })->count(),
-            'approved_count' => TrainingEntry::where('entry_status', 'Approved')->count(),
-            'pending_count'  => TrainingEntry::where('entry_status', 'Awaiting Approval')->count(),
+            'trainees_count' => $isAdmin
+                ? User::where(fn($q) => $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')))->count()
+                : count($assignedTraineeIds),
+            'approved_count' => TrainingEntry::where('entry_status', 'Approved')->tap($entryScope)->count(),
+            'pending_count'  => TrainingEntry::where('entry_status', 'Awaiting Approval')->tap($entryScope)->count(),
         ];
 
         return view('profile.show', compact('user', 'stats'));

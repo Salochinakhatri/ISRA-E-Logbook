@@ -20,6 +20,7 @@ class User extends Model
         'tenant_id',
         'user_type_id',
         'role_id',
+        'supervisor_id',
         'username',
         'email',
         'password',
@@ -43,6 +44,21 @@ class User extends Model
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function directTrainees(): HasMany
+    {
+        return $this->hasMany(User::class, 'supervisor_id');
+    }
+
+    public function assignedTrainees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'supervisor_trainee', 'supervisor_id', 'trainee_id')->withTimestamps();
     }
 
     public function roles(): BelongsToMany
@@ -140,6 +156,34 @@ class User extends Model
     public function isFellow(): bool
     {
         return $this->hasRole('fellow');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(['administrator', 'admin']);
+    }
+
+    /**
+     * Return IDs of all trainees assigned to this supervisor.
+     *
+     * @return array<int>
+     */
+    public function getAssignedTraineeIds(): array
+    {
+        $directIds = static::where('supervisor_id', $this->id)->pluck('id')->toArray();
+        $pivotIds = DB::table('supervisor_trainee')->where('supervisor_id', $this->id)->pluck('trainee_id')->toArray();
+
+        return array_values(array_unique(array_merge($directIds, $pivotIds)));
+    }
+
+    /**
+     * Get a query builder for all trainees assigned to this supervisor.
+     */
+    public function assignedTraineesQuery()
+    {
+        $traineeIds = $this->getAssignedTraineeIds();
+
+        return static::whereIn('id', $traineeIds);
     }
 
     public function verifyPassword(string $plain): bool

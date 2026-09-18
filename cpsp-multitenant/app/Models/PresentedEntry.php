@@ -13,7 +13,7 @@ class PresentedEntry extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'user_id', 'rec_date', 'rec_title', 'rec_venue',
+        'tenant_id', 'user_id', 'supervisor_id', 'rec_date', 'rec_title', 'rec_venue',
         'conf_name', 'rec_type', 'program', 'std_post', 'entry_status',
         'supervisor_remarks', 'approved_at', 'approved_by',
     ];
@@ -26,6 +26,11 @@ class PresentedEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     public function approvedBy(): BelongsTo

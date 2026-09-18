@@ -13,7 +13,7 @@ class PublishedEntry extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'user_id', 'pub_date', 'pub_title',
+        'tenant_id', 'user_id', 'supervisor_id', 'pub_date', 'pub_title',
         'full_ref', 'pub_journal', 'pub_authors',
         'program', 'std_post', 'entry_status', 'supervisor_remarks', 'approved_at', 'approved_by',
     ];
@@ -26,6 +26,11 @@ class PublishedEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 
     public function approvedBy(): BelongsTo

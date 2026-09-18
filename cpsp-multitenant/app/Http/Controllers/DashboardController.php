@@ -172,12 +172,21 @@ class DashboardController extends Controller
         }
 
         // Supervisor / Fellow view
-        $trainees = User::where(function ($q) {
-            $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
-              ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
-        })
-            ->with('profile')
-            ->get();
+        $isAdmin = $user->isAdmin();
+        $assignedTraineeIds = $user->getAssignedTraineeIds();
+
+        if ($isAdmin) {
+            $trainees = User::where(function ($q) {
+                $q->whereHas('userType', fn($sub) => $sub->where('name', 'Trainee'))
+                  ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'trainee')->orWhere('name', 'Trainee'));
+            })
+                ->with('profile')
+                ->get();
+        } else {
+            $trainees = User::whereIn('id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1])
+                ->with('profile')
+                ->get();
+        }
 
         $currentTrainees = $trainees->map(function ($trainee) {
             $trainingCount = TrainingEntry::where('user_id', $trainee->id)
@@ -223,10 +232,23 @@ class DashboardController extends Controller
 
         $rotationalTrainees = $currentTrainees->filter(fn($t) => $t['rotational'] > 0)->values();
 
+        $approvedQueryScope = function ($q) use ($isAdmin, $user, $assignedTraineeIds) {
+            $q->where('entry_status', 'Approved');
+            if (! $isAdmin) {
+                $q->where(function ($sq) use ($user, $assignedTraineeIds) {
+                    $sq->where('supervisor_id', $user->id)
+                       ->orWhereIn('user_id', !empty($assignedTraineeIds) ? $assignedTraineeIds : [-1]);
+                });
+            }
+        };
+
+        $approvedTrainings = TrainingEntry::query()->tap($approvedQueryScope)->count();
+        $approvedRotationals = RotationalEntry::query()->tap($approvedQueryScope)->count();
+
         $stats = [
             'feedback_trainee'  => Suggestion::count(),
             'cme_credits'       => '12.00',
-            'reports_count'     => TrainingEntry::where('entry_status', 'Approved')->count() + RotationalEntry::where('entry_status', 'Approved')->count(),
+            'reports_count'     => $approvedTrainings + $approvedRotationals,
             'workshop_feedback' => 0,
             'total_pending'     => $currentTrainees->sum('total'),
         ];
