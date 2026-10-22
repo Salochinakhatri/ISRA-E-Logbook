@@ -90,6 +90,17 @@ Route::middleware(['tenant'])->group(function () {
         Route::get('/supervisor/entries/{type}/{id}',      [\App\Http\Controllers\SupervisorApprovalController::class, 'show'])->name('supervisor.entry.show')->where('id', '[0-9]+');
         Route::post('/supervisor/entries/{type}/{id}/status', [\App\Http\Controllers\SupervisorApprovalController::class, 'updateStatus'])->name('supervisor.entry.status')->where('id', '[0-9]+');
         Route::post('/supervisor/entries/bulk-status',     [\App\Http\Controllers\SupervisorApprovalController::class, 'bulkUpdateStatus'])->name('supervisor.entries.bulk');
+        Route::get('/supervisor/trainees/{id}/academic-review', [\App\Http\Controllers\SupervisorApprovalController::class, 'academicReview'])->name('supervisor.academic-review')->where('id', '[0-9]+');
+        Route::get('/supervisor/academic-review',                [\App\Http\Controllers\SupervisorApprovalController::class, 'academicReview'])->name('supervisor.academic-review.direct');
+
+        // Dynamic Academic Progression Management (Workshops, Synopsis, Dissertation)
+        Route::get('/academic-progression',                                   [\App\Http\Controllers\AcademicProgressionController::class, 'traineeIndex'])->name('academic.trainee');
+        Route::post('/supervisor/trainees/{id}/workshops',                    [\App\Http\Controllers\AcademicProgressionController::class, 'storeWorkshop'])->name('academic.workshop.store')->where('id', '[0-9]+');
+        Route::delete('/supervisor/trainees/{id}/workshops/{workshopId}',     [\App\Http\Controllers\AcademicProgressionController::class, 'deleteWorkshop'])->name('academic.workshop.delete')->where(['id' => '[0-9]+', 'workshopId' => '[0-9]+']);
+        Route::post('/supervisor/trainees/{id}/synopses',                     [\App\Http\Controllers\AcademicProgressionController::class, 'storeSynopsis'])->name('academic.synopsis.store')->where('id', '[0-9]+');
+        Route::delete('/supervisor/trainees/{id}/synopses/{synopsisId}',      [\App\Http\Controllers\AcademicProgressionController::class, 'deleteSynopsis'])->name('academic.synopsis.delete')->where(['id' => '[0-9]+', 'synopsisId' => '[0-9]+']);
+        Route::post('/supervisor/trainees/{id}/dissertations',                [\App\Http\Controllers\AcademicProgressionController::class, 'storeDissertation'])->name('academic.dissertation.store')->where('id', '[0-9]+');
+        Route::delete('/supervisor/trainees/{id}/dissertations/{dissId}',     [\App\Http\Controllers\AcademicProgressionController::class, 'deleteDissertation'])->name('academic.dissertation.delete')->where(['id' => '[0-9]+', 'dissId' => '[0-9]+']);
 
         // Profile & Password Management
         Route::get('/profile',           [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');

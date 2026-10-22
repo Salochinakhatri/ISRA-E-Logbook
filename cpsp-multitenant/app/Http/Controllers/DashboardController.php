@@ -10,6 +10,9 @@ use App\Models\PublishedEntry;
 use App\Models\RotationalEntry;
 use App\Models\Suggestion;
 use App\Models\TrainingEntry;
+use App\Models\TraineeWorkshop;
+use App\Models\TraineeSynopsis;
+use App\Models\TraineeDissertation;
 use App\Models\User;
 use App\Services\TenantManager;
 use Illuminate\View\View;
@@ -216,6 +219,10 @@ class DashboardController extends Controller
 
             $total = $trainingCount + $rotationalCount + $journalCount + $presentedCount + $publishedCount;
 
+            $academicCount = TraineeWorkshop::where('user_id', $trainee->id)->count()
+                + TraineeSynopsis::where('user_id', $trainee->id)->count()
+                + TraineeDissertation::where('user_id', $trainee->id)->count();
+
             return [
                 'id'                  => $trainee->id,
                 'name'                => $trainee->profile?->full_name ?: $trainee->username,
@@ -227,6 +234,7 @@ class DashboardController extends Controller
                 'published'           => $publishedCount,
                 'record_of_training'  => 0,
                 'total'               => $total,
+                'academic_count'      => $academicCount,
             ];
         });
 
@@ -253,6 +261,8 @@ class DashboardController extends Controller
             'total_pending'     => $currentTrainees->sum('total'),
         ];
 
-        return view('dashboard.supervisor', compact('user', 'currentTrainees', 'rotationalTrainees', 'stats'));
+        $tenant = $user->tenant ?? $this->tenantManager->get();
+
+        return view('dashboard.supervisor', compact('user', 'currentTrainees', 'rotationalTrainees', 'stats', 'tenant'));
     }
 }

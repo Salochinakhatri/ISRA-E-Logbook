@@ -101,6 +101,21 @@ class User extends Model
         return $this->hasMany(Suggestion::class);
     }
 
+    public function workshops(): HasMany
+    {
+        return $this->hasMany(TraineeWorkshop::class);
+    }
+
+    public function synopses(): HasMany
+    {
+        return $this->hasMany(TraineeSynopsis::class);
+    }
+
+    public function dissertations(): HasMany
+    {
+        return $this->hasMany(TraineeDissertation::class);
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     /**

@@ -85,6 +85,11 @@
                     </div>
                 </div>
 
+                {{-- Workshops / Synopsis / Dissertation --}}
+                <a class="elog-sidebar__link @yield('nav_academic_progression', '')" href="{{ route('academic.trainee') }}">
+                    <i class="fa-solid fa-graduation-cap"></i><span>Workshops & Dissertation</span>
+                </a>
+
                 {{-- Suggestions --}}
                 <div class="elog-sidebar__group @yield('group_suggestions', '')">
                     <button type="button" class="elog-sidebar__parent" id="suggestionsToggle" aria-expanded="false">
