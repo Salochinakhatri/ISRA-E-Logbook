@@ -2,9 +2,9 @@
 
 :root {
     --bg-page: #f2f2f2;
-    --green-primary: #28a745;
-    --green-hover: #218838;
-    --green-dark: #1e7e34;
+    --green-primary: #0b6040;
+    --green-hover: #084d33;
+    --green-dark: #0b6040;
     --text-muted: #6c757d;
     --text-dark: #333333;
     --input-bg: #e8f0fe;
@@ -617,36 +617,62 @@ body {
 .elog-sidebar {
     width: 260px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, #3fa66a 0%, #2f8f56 40%, #2a7d4d 100%);
+    background: linear-gradient(180deg, #0b6040 0%, #095237 45%, #063c28 100%);
     color: #fff;
     display: flex;
     flex-direction: column;
     z-index: 120;
-    transition: transform 0.25s ease;
+    transition: transform 0.25s ease, width 0.25s ease;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+    box-shadow: 2px 0 12px rgba(11, 96, 64, 0.12);
+}
+
+.elog-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.elog-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
 }
 
 .elog-sidebar__brand {
-    padding: 1.35rem 1.1rem 1.1rem;
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    background: rgba(0, 0, 0, 0.06);
+    padding: 1.25rem 1.15rem 1.15rem;
+    background: rgba(0, 0, 0, 0.14);
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .elog-sidebar__logo {
-    display: inline-block;
-    vertical-align: middle;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .elog-sidebar__brand-text {
-    margin-left: 0.6rem;
-    vertical-align: middle;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    margin-left: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .elog-sidebar__nav {
-    padding: 0.5rem 0 1.5rem;
+    padding: 0.6rem 0 1.5rem;
     flex: 1;
 }
 
@@ -654,6 +680,7 @@ body {
     margin-top: auto;
     padding: 0.5rem 0;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.16);
 }
 
 .elog-sidebar.is-collapsed .elog-sidebar__bottom .elog-sidebar__link span {
@@ -669,26 +696,50 @@ body {
 .elog-sidebar__link {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.95rem 1.1rem;
-    color: #fff;
+    gap: 0.75rem;
+    padding: 0.85rem 1.15rem;
+    color: rgba(255, 255, 255, 0.88);
     text-decoration: none;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
     font-weight: 600;
-    background: rgba(0, 0, 0, 0.08);
+    letter-spacing: 0.01em;
+    background: transparent;
     border-left: 4px solid transparent;
+    transition: all 0.18s ease;
+}
+
+.elog-sidebar__link i {
+    font-size: 15px;
+    width: 18px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.18s ease;
 }
 
 .elog-sidebar__link:hover {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.elog-sidebar__link:hover i {
+    color: #ffffff;
 }
 
 .elog-sidebar__link.is-active {
     background: rgba(255, 255, 255, 0.18);
-    border-left-color: #fff;
+    color: #ffffff;
+    font-weight: 700;
+    border-left-color: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.elog-sidebar__link.is-active i {
+    color: #ffffff;
 }
 
 .elog-sidebar__group {
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .elog-sidebar__parent {
@@ -697,78 +748,115 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.95rem 1.1rem;
+    padding: 0.85rem 1.15rem;
     border: none;
     cursor: pointer;
-    font: inherit;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
     font-weight: 600;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.08);
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.88);
+    background: transparent;
     text-align: left;
     border-left: 4px solid transparent;
+    transition: all 0.18s ease;
+}
+
+.elog-sidebar__parent i {
+    font-size: 15px;
+    width: 18px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.18s ease;
 }
 
 .elog-sidebar__parent:hover {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.elog-sidebar__parent:hover i {
+    color: #ffffff;
 }
 
 .elog-sidebar__group.is-active>.elog-sidebar__parent {
-    background: #5ecf8a;
-    color: #fff;
-    border-left-color: #fff;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font-weight: 700;
+    border-left-color: #ffffff;
+}
+
+.elog-sidebar__group.is-active>.elog-sidebar__parent i {
+    color: #ffffff;
 }
 
 .elog-sidebar__parent-left {
     display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.75rem;
 }
 
 .elog-sidebar__chev {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.15);
-    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
 }
 
-.elog-sidebar__sub {
-    display: none;
-    flex-direction: column;
-    background: #143824;
-    padding: 0.35rem 0 0.65rem;
+.elog-sidebar__chev i {
+    font-size: 11px;
+    width: auto;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    color: inherit;
 }
 
-.elog-sidebar__group.is-open .elog-sidebar__sub {
-    display: flex;
+.elog-sidebar__parent:hover .elog-sidebar__chev {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
 }
 
 .elog-sidebar__group.is-open .elog-sidebar__chev i {
     transform: rotate(180deg);
 }
 
-.elog-sidebar__chev i {
-    display: inline-block;
-    transition: transform 0.2s ease;
+.elog-sidebar__sub {
+    display: none;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.35rem 0 0.5rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.elog-sidebar__group.is-open .elog-sidebar__sub {
+    display: flex;
 }
 
 .elog-sidebar__sublink {
-    padding: 0.65rem 1.1rem 0.65rem 2.25rem;
-    color: #e8f5ee;
+    padding: 0.6rem 1.15rem 0.6rem 2.45rem;
+    color: rgba(255, 255, 255, 0.82);
     text-decoration: none;
-    font-size: 0.95rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s ease;
 }
 
 .elog-sidebar__sublink:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
 }
 
 .elog-sidebar__sublink.is-active {
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .elog-shell {
@@ -2778,13 +2866,6 @@ button.competency-tree__toggle:hover {
 }
 .btn-icon-action--discuss:hover {
     background-color: #5a32a3;
-}
-
-.btn-icon-action--disapprove {
-    background-color: #dc3545;
-}
-.btn-icon-action--disapprove:hover {
-    background-color: #c82333;
 }
 
 /* Details Grid */

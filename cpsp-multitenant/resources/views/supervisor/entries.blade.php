@@ -1167,13 +1167,6 @@
                 <span class="sup-tab-count sup-tab-count--info">{{ $statusCounts['resubmit'] }}</span>
             </a>
 
-            <a href="{{ route('supervisor.entries', array_merge(request()->except('status'), ['status' => 'Disapproved'])) }}" 
-               class="sup-segmented-tab {{ $statusFilter === 'Disapproved' ? 'is-active is-danger' : '' }}">
-                <i class="fa-solid fa-ban" style="color: #f43f5e;"></i>
-                <span>Disapproved</span>
-                <span class="sup-tab-count sup-tab-count--danger">{{ $statusCounts['disapproved'] }}</span>
-            </a>
-
             <a href="{{ route('supervisor.entries', array_merge(request()->except('status'), ['status' => 'all'])) }}" 
                class="sup-segmented-tab {{ $statusFilter === 'all' ? 'is-active is-all' : '' }}">
                 <i class="fa-solid fa-layer-group" style="color: #64748b;"></i>
@@ -1206,7 +1199,6 @@
                     <option value="Approved">Approve Selected</option>
                     <option value="Awaiting Approval">Mark as Pending</option>
                     <option value="Discuss and Resubmit">Discuss and Resubmit</option>
-                    <option value="Disapproved">Disapprove Selected</option>
                 </select>
 
                 <input type="text" name="bulk_remarks" id="bulkRemarksInput" class="sup-bulk-remarks" placeholder="Optional supervisor remarks...">
@@ -1230,7 +1222,7 @@
                         </th>
                         <th style="min-width: 170px; text-align: left;">Admission Date / Procedure</th>
                         <th style="min-width: 180px; text-align: left;">Diagnosis</th>
-                        <th style="min-width: 170px; text-align: left;">Brief Desc</th>
+                        <th style="min-width: 170px; text-align: left;">Brief Description</th>
                         <th style="min-width: 220px; text-align: left;">Competency Group / Detail</th>
                         <th style="width: 130px; text-align: left;">Level</th>
                         <th style="width: 160px; text-align: left;">Entry Status / Hospt. Reg. No.</th>
@@ -1308,7 +1300,6 @@
                                     'Approved' => 'badge--ok',
                                     'Awaiting Approval' => 'badge--warn',
                                     'Discuss and Resubmit' => 'badge--info',
-                                    'Disapproved' => 'badge--danger',
                                     default => 'badge--muted',
                                 };
                             @endphp
@@ -1532,7 +1523,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (status === 'Approved') cls = 'badge--ok';
         else if (status === 'Awaiting Approval') cls = 'badge--warn';
         else if (status === 'Discuss and Resubmit') cls = 'badge--info';
-        else if (status === 'Disapproved') cls = 'badge--danger';
         return '<span class="badge ' + cls + '">' + escapeHtml(status) + '</span>';
     }
 
@@ -1579,15 +1569,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Hospt. reg. no. / autopsy
             html += '  <div class="sup-modal-field">';
-            html += '    <span class="sup-modal-field__label"><i class="fa-solid fa-hospital-user"></i> Hospt. Reg. No. / Autopsy</span>';
+            html += '    <span class="sup-modal-field__label"><i class="fa-solid fa-hospital-user"></i> Hospt. Reg. No. / Autopsy / MLC No. </span>';
             html += '    <span class="sup-modal-field__value">' + escapeHtml(data.hospt_reg_no || '—') + '</span>';
             html += '  </div>';
 
             // MLC No
-            html += '  <div class="sup-modal-field">';
-            html += '    <span class="sup-modal-field__label"><i class="fa-solid fa-scale-balanced"></i> MLC No.</span>';
-            html += '    <span class="sup-modal-field__value">' + escapeHtml(data.mlc_no || data.hospt_reg_no || '—') + '</span>';
-            html += '  </div>';
+            // html += '  <div class="sup-modal-field">';
+            // html += '    <span class="sup-modal-field__label"><i class="fa-solid fa-scale-balanced"></i> MLC No.</span>';
+            // html += '    <span class="sup-modal-field__value">' + escapeHtml(data.mlc_no || data.hospt_reg_no || '—') + '</span>';
+            // html += '  </div>';
 
             // Date of Admission / Procedure
             html += '  <div class="sup-modal-field">';
@@ -1684,7 +1674,6 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '          <option value="Approved"' + (data.entry_status === 'Approved' ? ' selected' : '') + '>Approved</option>';
             html += '          <option value="Discuss and Resubmit"' + (data.entry_status === 'Discuss and Resubmit' ? ' selected' : '') + '>Discuss and Resubmit</option>';
             html += '          <option value="Awaiting Approval"' + (data.entry_status === 'Awaiting Approval' ? ' selected' : '') + '>Awaiting Approval (Pending)</option>';
-            html += '          <option value="Disapproved"' + (data.entry_status === 'Disapproved' ? ' selected' : '') + '>Disapproved</option>';
             html += '        </select>';
             html += '      </div>';
 
@@ -1769,7 +1758,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (newStatus === 'Approved') cls = 'badge--ok';
                             else if (newStatus === 'Awaiting Approval') cls = 'badge--warn';
                             else if (newStatus === 'Discuss and Resubmit') cls = 'badge--info';
-                            else if (newStatus === 'Disapproved') cls = 'badge--danger';
 
                             badgeEl.className = 'badge ' + cls + ' js-row-status-badge';
                             badgeEl.textContent = newStatus;

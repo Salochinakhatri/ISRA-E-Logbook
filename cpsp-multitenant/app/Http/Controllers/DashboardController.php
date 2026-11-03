@@ -15,6 +15,7 @@ use App\Models\TraineeSynopsis;
 use App\Models\TraineeDissertation;
 use App\Models\User;
 use App\Services\TenantManager;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -24,7 +25,7 @@ class DashboardController extends Controller
     public function index(): View|\Illuminate\Http\RedirectResponse
     {
         $userId = (int) session('user_id');
-        $user   = User::with('userType', 'profile')->find($userId);
+        $user   = User::with('userType', 'profile', 'supervisor.profile')->find($userId);
 
         if (! $user) {
             session()->forget(['user_id', 'user_type_id', 'username', 'email', 'user_type', 'tenant_id']);
@@ -171,7 +172,53 @@ class DashboardController extends Controller
                 ? $lastEntryDate->format('F j, Y')
                 : null;
 
-            return view('dashboard.trainee', compact('user', 'counts', 'lastEntryLabel', 'recentActivities'));
+            // Status counts breakdown across clinical entries
+            $trainingStatuses = TrainingEntry::where('user_id', $userId)->select('entry_status', DB::raw('count(*) as count'))->groupBy('entry_status')->pluck('count', 'entry_status');
+            $rotationalStatuses = RotationalEntry::where('user_id', $userId)->select('entry_status', DB::raw('count(*) as count'))->groupBy('entry_status')->pluck('count', 'entry_status');
+            $journalStatuses = JournalEntry::where('user_id', $userId)->select('entry_status', DB::raw('count(*) as count'))->groupBy('entry_status')->pluck('count', 'entry_status');
+            $presentedStatuses = PresentedEntry::where('user_id', $userId)->select('entry_status', DB::raw('count(*) as count'))->groupBy('entry_status')->pluck('count', 'entry_status');
+            $publishedStatuses = PublishedEntry::where('user_id', $userId)->select('entry_status', DB::raw('count(*) as count'))->groupBy('entry_status')->pluck('count', 'entry_status');
+
+            $statusCounts = [
+                'approved'    => 0,
+                'awaiting'    => 0,
+                'resubmit'    => 0,
+            ];
+
+            foreach ([$trainingStatuses, $rotationalStatuses, $journalStatuses, $presentedStatuses, $publishedStatuses] as $statList) {
+                foreach ($statList as $st => $ct) {
+                    $stNorm = strtolower(trim((string)$st));
+                    if (str_contains($stNorm, 'awaiting') || str_contains($stNorm, 'pending')) {
+                        $statusCounts['awaiting'] += (int)$ct;
+                    } elseif (str_contains($stNorm, 'approved')) {
+                        $statusCounts['approved'] += (int)$ct;
+                    } elseif (str_contains($stNorm, 'resubmit') || str_contains($stNorm, 'discuss')) {
+                        $statusCounts['resubmit'] += (int)$ct;
+                    }
+                }
+            }
+
+            $academicCounts = [
+                'workshops'     => TraineeWorkshop::where('user_id', $userId)->count(),
+                'synopsis'      => TraineeSynopsis::where('user_id', $userId)->count(),
+                'dissertation'  => TraineeDissertation::where('user_id', $userId)->count(),
+            ];
+            $academicCounts['total'] = $academicCounts['workshops'] + $academicCounts['synopsis'] + $academicCounts['dissertation'];
+
+            $totalEntries = $counts['training'] + $counts['rotational'] + $counts['journal'] + $counts['presented'] + $counts['published'];
+
+            $assignedSupervisor = $user->supervisor ?: User::whereIn('id', DB::table('supervisor_trainee')->where('trainee_id', $user->id)->pluck('supervisor_id'))->with('profile')->first();
+
+            return view('dashboard.trainee', compact(
+                'user',
+                'counts',
+                'lastEntryLabel',
+                'recentActivities',
+                'statusCounts',
+                'academicCounts',
+                'totalEntries',
+                'assignedSupervisor'
+            ));
         }
 
         // Supervisor / Fellow view

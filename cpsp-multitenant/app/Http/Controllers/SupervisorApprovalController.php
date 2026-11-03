@@ -171,7 +171,6 @@ class SupervisorApprovalController extends Controller
             'awaiting'    => $this->countSubmittedByStatus('Awaiting Approval', $traineeId, $typeFilter, $user, $filters),
             'approved'    => $this->countSubmittedByStatus('Approved', $traineeId, $typeFilter, $user, $filters),
             'resubmit'    => $this->countSubmittedByStatus('Discuss and Resubmit', $traineeId, $typeFilter, $user, $filters),
-            'disapproved' => $this->countSubmittedByStatus('Disapproved', $traineeId, $typeFilter, $user, $filters),
             'all'         => $this->countSubmittedByStatus('all', $traineeId, $typeFilter, $user, $filters),
         ];
 
@@ -322,7 +321,7 @@ class SupervisorApprovalController extends Controller
         $user = User::find($supervisorId);
 
         $validated = $request->validate([
-            'status'             => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit,Disapproved'],
+            'status'             => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit'],
             'supervisor_remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -372,7 +371,7 @@ class SupervisorApprovalController extends Controller
 
         $validated = $request->validate([
             'selected_entries'   => ['required', 'array'],
-            'bulk_status'        => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit,Disapproved'],
+            'bulk_status'        => ['required', 'in:Approved,Awaiting Approval,Discuss and Resubmit'],
             'bulk_remarks'       => ['nullable', 'string', 'max:1000'],
         ]);
 

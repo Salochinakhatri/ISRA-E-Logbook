@@ -273,7 +273,6 @@
     border: 1px solid #bae6fd;
 }
 
-.badge-disapproved,
 .badge-rejected {
     background-color: #fee2e2;
     color: #991b1b;
@@ -468,7 +467,7 @@
                                 $sBadgeClass = match(true) {
                                     str_contains($sStatus, 'approved') || str_contains($sStatus, 'accepted') => 'badge-approved',
                                     str_contains($sStatus, 'review') || str_contains($sStatus, 'submitted') => 'badge-under-review',
-                                    str_contains($sStatus, 'rejected') || str_contains($sStatus, 'disapproved') => 'badge-rejected',
+                                    str_contains($sStatus, 'rejected') => 'badge-rejected',
                                     default => 'badge-approved',
                                 };
                             @endphp

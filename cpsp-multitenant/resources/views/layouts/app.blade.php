@@ -20,7 +20,7 @@
                 <span class="elog-sidebar__brand-text">{{ $tenant->name ?? 'Isra e-Logbook' }}</span>
             </div>
             <nav class="elog-sidebar__nav" aria-label="Main">
-                <a class="elog-sidebar__link @yield('nav_home', '')" href="{{ route('dashboard', ['program' => request('program')]) }}">
+                <a class="elog-sidebar__link {{ (request()->routeIs('dashboard') && !request()->has('status')) ? 'is-active' : '' }} @yield('nav_home', '')" href="{{ route('dashboard', ['program' => request('program')]) }}">
                     <i class="fa-solid fa-house"></i><span>Home</span>
                 </a>
 
@@ -102,20 +102,25 @@
                 </div>
                 @else
                 {{-- Supervisor / Fellow Navigation --}}
-                <a class="elog-sidebar__link @yield('nav_supervisor_entries', '')" href="{{ route('supervisor.entries') }}">
+                @php
+                    $isApprovedEntries = request()->routeIs('supervisor.entries') && request('status') === 'Approved';
+                    $isAwaitingApprovals = (request()->routeIs('supervisor.entries') && request('status') !== 'Approved') || request()->routeIs('supervisor.entry.show');
+                    $isSuggestions = request()->routeIs('suggestions.*');
+                @endphp
+                <a class="elog-sidebar__link {{ ($isAwaitingApprovals || (!request()->has('status') && trim($__env->yieldContent('nav_supervisor_entries', '')))) && !$isApprovedEntries ? 'is-active' : '' }}" href="{{ route('supervisor.entries') }}">
                     <i class="fa-solid fa-clipboard-check"></i><span>Awaiting Approvals</span>
                 </a>
-                <div class="elog-sidebar__group @yield('group_reports', '')">
-                    <button type="button" class="elog-sidebar__parent" id="reportsToggle" aria-expanded="false">
+                <div class="elog-sidebar__group {{ $isApprovedEntries ? 'is-active is-open' : '' }} @yield('group_reports', '')">
+                    <button type="button" class="elog-sidebar__parent" id="reportsToggle" aria-expanded="{{ $isApprovedEntries ? 'true' : 'false' }}">
                         <span class="elog-sidebar__parent-left"><i class="fa-solid fa-table-cells"></i><span>Reports</span></span>
                         <span class="elog-sidebar__chev" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></span>
                     </button>
                     <div class="elog-sidebar__sub" id="reportsSubnav">
-                        <a class="elog-sidebar__sublink" href="{{ route('dashboard') }}">Summary Reports</a>
-                        <a class="elog-sidebar__sublink" href="{{ route('supervisor.entries', ['status' => 'Approved']) }}">Approved Entries</a>
+                        <a class="elog-sidebar__sublink @yield('nav_reports_summary', '')" href="{{ route('dashboard') }}">Summary Reports</a>
+                        <a class="elog-sidebar__sublink {{ $isApprovedEntries ? 'is-active' : '' }} @yield('nav_reports_approved', '')" href="{{ route('supervisor.entries', ['status' => 'Approved']) }}">Approved Entries</a>
                     </div>
                 </div>
-                <a class="elog-sidebar__link @yield('nav_suggestions_list', '')" href="{{ route('suggestions.index') }}">
+                <a class="elog-sidebar__link {{ $isSuggestions ? 'is-active' : '' }} @yield('nav_suggestions_list', '')" href="{{ route('suggestions.index') }}">
                     <i class="fa-solid fa-lightbulb"></i><span>Suggestions</span>
                 </a>
                 @endif
@@ -123,7 +128,7 @@
 
             {{-- Pinned to bottom like in CPSP reference --}}
             <div class="elog-sidebar__bottom">
-                <a class="elog-sidebar__link" href="{{ route('profile.show') }}#password-section">
+                <a class="elog-sidebar__link {{ request()->routeIs('profile.show') ? 'is-active' : '' }}" href="{{ route('profile.show') }}#password-section">
                     <i class="fa-solid fa-lock"></i><span>Change Password</span>
                 </a>
                 <a class="elog-sidebar__link js-logout-confirm" href="{{ route('logout') }}">
