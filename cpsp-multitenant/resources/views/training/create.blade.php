@@ -290,6 +290,12 @@
     background-color: #ffffff;
     box-shadow: 0 0 0 3px rgba(11, 96, 64, 0.12);
 }
+.field-control.is-invalid,
+.resp-select-trigger.has-error {
+    border-color: #dc2626 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
 select.field-control {
     cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -588,36 +594,15 @@ textarea.field-control {
         </div>
     </div>
 
-    {{-- Server Error Alert --}}
-    @if($errors->any() || !empty($formErrors) || session('flash_err'))
+    {{-- Server Error Alert (Only for general session flash errors) --}}
+    @if(session('flash_err'))
     <div class="modern-alert modern-alert--danger" role="alert">
         <div class="modern-alert__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div class="modern-alert__content">
-            <div class="modern-alert__title">Please complete all required fields correctly.</div>
-            <ul class="modern-alert__list">
-                @foreach($errors->all() as $err)
-                    <li>{{ $err }}</li>
-                @endforeach
-                @if(!empty($formErrors))
-                    @foreach($formErrors as $fe)
-                        @if($fe !== 'Please fill all the required fields.' && !in_array($fe, $errors->all()))
-                            <li>{{ $fe }}</li>
-                        @endif
-                    @endforeach
-                @endif
-            </ul>
+            <div class="modern-alert__title">{{ session('flash_err') }}</div>
         </div>
     </div>
     @endif
-
-    {{-- Client-side Error Alert --}}
-    <div id="clientErrorBox" class="modern-alert modern-alert--danger" style="display:none;" role="alert">
-        <div class="modern-alert__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="modern-alert__content">
-            <div class="modern-alert__title">Please complete all required fields:</div>
-            <ul id="clientErrorList" class="modern-alert__list"></ul>
-        </div>
-    </div>
 
     {{-- Form Container --}}
     <form class="elog-form" action="{{ route('training.store') }}" method="post" id="trainingAddForm" novalidate>
@@ -1013,55 +998,70 @@ document.addEventListener('DOMContentLoaded', function () {
 
         resetFormSubmitBtn();
 
-        form.addEventListener('submit', function (e) {
-            var missing = [];
-            var errorBox = document.getElementById('clientErrorBox');
-            var errorList = document.getElementById('clientErrorList');
+        function setFieldInvalid(el, isInvalid) {
+            if (!el) return;
+            var trigger = el.id ? document.getElementById('resp_trigger_' + el.id) : null;
+            if (!trigger && el.parentElement && el.parentElement.classList.contains('resp-select-container')) {
+                trigger = el.parentElement.querySelector('.resp-select-trigger');
+            }
+            if (isInvalid) {
+                el.classList.add('is-invalid');
+                el.style.borderColor = '#dc2626';
+                el.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.12)';
+                if (trigger) {
+                    trigger.classList.add('has-error');
+                    trigger.style.borderColor = '#dc2626';
+                    trigger.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.12)';
+                }
+            } else {
+                el.classList.remove('is-invalid');
+                el.style.borderColor = '';
+                el.style.boxShadow = '';
+                if (trigger) {
+                    trigger.classList.remove('has-error');
+                    trigger.style.borderColor = '';
+                    trigger.style.boxShadow = '';
+                }
+            }
+        }
 
-            function checkField(id, label) {
+        form.addEventListener('submit', function (e) {
+            var firstInvalid = null;
+
+            function checkField(id) {
                 var el = document.getElementById(id);
                 if (!el || !el.value || el.value.trim() === '') {
-                    missing.push(label);
                     if (el) {
-                        el.style.borderColor = '#dc2626';
-                        el.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.12)';
+                        setFieldInvalid(el, true);
+                        if (!firstInvalid) {
+                            firstInvalid = (el.id && document.getElementById('resp_trigger_' + el.id)) || el;
+                        }
                     }
                 } else if (el) {
-                    el.style.borderColor = '';
-                    el.style.boxShadow = '';
+                    setFieldInvalid(el, false);
                 }
             }
 
-            checkField('form_type', 'Form Type is required.');
-            checkField('hospt_reg_no', 'Hospital Reg. No is required.');
-            checkField('date_of_admission', 'Date of Admission is required.');
-            checkField('pt_gender', 'Gender is required.');
-            checkField('pt_age', 'Age is required.');
-            checkField('pt_diagnosis', 'Diagnosis / Suspected Diagnosis / Cause is required.');
-            checkField('level_id', 'Level is required.');
-            checkField('outcome_id', 'Outcome is required.');
-            checkField('brief_desc', 'Brief Description is required.');
+            checkField('form_type');
+            checkField('hospt_reg_no');
+            checkField('date_of_admission');
+            checkField('pt_gender');
+            checkField('pt_age');
+            checkField('entry_for_prog_id');
+            checkField('pt_diagnosis');
+            checkField('level_id');
+            checkField('outcome_id');
+            checkField('brief_desc');
 
-            if (missing.length > 0) {
+            if (firstInvalid) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 resetFormSubmitBtn();
-
-                if (errorBox && errorList) {
-                    errorList.innerHTML = '';
-                    missing.forEach(function (msg) {
-                        var li = document.createElement('li');
-                        li.textContent = msg;
-                        errorList.appendChild(li);
-                    });
-                    errorBox.style.display = 'flex';
-                    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else {
-                    alert('Please fill all the required fields:\n- ' + missing.join('\n- '));
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof firstInvalid.focus === 'function') {
+                    firstInvalid.focus({ preventScroll: true });
                 }
                 return false;
-            } else if (errorBox) {
-                errorBox.style.display = 'none';
             }
         });
 
@@ -1070,15 +1070,13 @@ document.addEventListener('DOMContentLoaded', function () {
             field.addEventListener('input', function () {
                 resetFormSubmitBtn();
                 if (this.value && this.value.trim() !== '') {
-                    this.style.borderColor = '';
-                    this.style.boxShadow = '';
+                    setFieldInvalid(this, false);
                 }
             });
             field.addEventListener('change', function () {
                 resetFormSubmitBtn();
                 if (this.value && this.value.trim() !== '') {
-                    this.style.borderColor = '';
-                    this.style.boxShadow = '';
+                    setFieldInvalid(this, false);
                 }
             });
         });

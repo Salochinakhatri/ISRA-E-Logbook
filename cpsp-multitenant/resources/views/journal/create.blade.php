@@ -10,32 +10,13 @@
     <a class="btn btn--blue" href="{{ route('journal.index', ['program' => request('program')]) }}">List All</a>
 </div>
 
-@if($errors->any() || !empty($formErrors) || session('flash_err'))
+@if(session('flash_err'))
 <div class="alert alert-danger elog-flash elog-alert-errors" role="alert" style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 14px 20px; border-radius: 6px; margin-bottom: 20px;">
-    <div style="font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-triangle-exclamation"></i> Please fill all the required fields.
+    <div style="font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ session('flash_err') }}
     </div>
-    <ul style="margin: 0; padding-left: 24px;">
-        @foreach($errors->all() as $err)
-            <li>{{ $err }}</li>
-        @endforeach
-        @if(!empty($formErrors))
-            @foreach($formErrors as $fe)
-                @if($fe !== 'Please fill all the required fields.' && !in_array($fe, $errors->all()))
-                    <li>{{ $fe }}</li>
-                @endif
-            @endforeach
-        @endif
-    </ul>
 </div>
 @endif
-
-<div id="clientErrorBox" style="display:none; background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 14px 20px; border-radius: 6px; margin-bottom: 20px;" role="alert">
-    <div style="font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-triangle-exclamation"></i> Please fill all the required fields.
-    </div>
-    <ul id="clientErrorList" style="margin: 0; padding-left: 24px;"></ul>
-</div>
 
 <div class="vd_content-section elog-content-section clearfix">
     <form class="form-horizontal elog-form" action="{{ route('journal.store') }}" method="post" name="mform" id="mform_journal" novalidate>
@@ -173,46 +154,61 @@ document.addEventListener('DOMContentLoaded', function () {
 
     resetFormSubmitBtn();
 
-    form.addEventListener('submit', function (e) {
-        var missing = [];
-        var errorBox = document.getElementById('clientErrorBox');
-        var errorList = document.getElementById('clientErrorList');
+    function setFieldInvalid(el, isInvalid) {
+        if (!el) return;
+        var trigger = el.id ? document.getElementById('resp_trigger_' + el.id) : null;
+        if (!trigger && el.parentElement && el.parentElement.classList.contains('resp-select-container')) {
+            trigger = el.parentElement.querySelector('.resp-select-trigger');
+        }
+        if (isInvalid) {
+            el.style.border = '1.5px solid #dc2626';
+            el.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.12)';
+            if (trigger) {
+                trigger.classList.add('has-error');
+                trigger.style.border = '1.5px solid #dc2626';
+                trigger.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.12)';
+            }
+        } else {
+            el.style.border = '';
+            el.style.boxShadow = '';
+            if (trigger) {
+                trigger.classList.remove('has-error');
+                trigger.style.border = '';
+                trigger.style.boxShadow = '';
+            }
+        }
+    }
 
-        function checkField(id, label) {
+    form.addEventListener('submit', function (e) {
+        var firstInvalid = null;
+
+        function checkField(id) {
             var el = document.getElementById(id);
             if (!el || !el.value || el.value.trim() === '') {
-                missing.push(label);
                 if (el) {
-                    el.style.border = '1px solid #d9534f';
+                    setFieldInvalid(el, true);
+                    if (!firstInvalid) {
+                        firstInvalid = (el.id && document.getElementById('resp_trigger_' + el.id)) || el;
+                    }
                 }
             } else if (el) {
-                el.style.border = '';
+                setFieldInvalid(el, false);
             }
         }
 
-        checkField('date_of_diss', 'Date of Discussion is required.');
-        checkField('fac_by', 'Facilitated by is required.');
+        checkField('date_of_diss');
+        checkField('fac_by');
+        checkField('ref_of_art_disc');
 
-        if (missing.length > 0) {
+        if (firstInvalid) {
             e.preventDefault();
             e.stopImmediatePropagation();
             resetFormSubmitBtn();
-
-            if (errorBox && errorList) {
-                errorList.innerHTML = '';
-                missing.forEach(function (msg) {
-                    var li = document.createElement('li');
-                    li.textContent = msg;
-                    errorList.appendChild(li);
-                });
-                errorBox.style.display = 'block';
-                errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                alert('Please fill all the required fields:\n- ' + missing.join('\n- '));
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstInvalid.focus === 'function') {
+                firstInvalid.focus({ preventScroll: true });
             }
             return false;
-        } else if (errorBox) {
-            errorBox.style.display = 'none';
         }
     });
 
@@ -220,13 +216,13 @@ document.addEventListener('DOMContentLoaded', function () {
         field.addEventListener('input', function () {
             resetFormSubmitBtn();
             if (this.value && this.value.trim() !== '') {
-                this.style.border = '';
+                setFieldInvalid(this, false);
             }
         });
         field.addEventListener('change', function () {
             resetFormSubmitBtn();
             if (this.value && this.value.trim() !== '') {
-                this.style.border = '';
+                setFieldInvalid(this, false);
             }
         });
     });
