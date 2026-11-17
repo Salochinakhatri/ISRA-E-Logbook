@@ -575,7 +575,7 @@ textarea.field-control {
             <li class="breadcrumb-item separator"><i class="fa-solid fa-chevron-right"></i></li>
             <li class="breadcrumb-item"><a href="{{ route('training.index', ['program' => request('program')]) }}">Training</a></li>
             <li class="breadcrumb-item separator"><i class="fa-solid fa-chevron-right"></i></li>
-            <li class="breadcrumb-item active">Add New Entry</li>
+            <li class="breadcrumb-item active">{{ isset($entry) ? 'Edit Entry #' . $entry->hospt_reg_no : 'Add New Entry' }}</li>
         </ol>
     </nav>
 
@@ -583,8 +583,8 @@ textarea.field-control {
     <div class="training-header-banner">
         <div class="training-header__left">
             <span class="training-badge-pill"><i class="fa-solid fa-file-medical"></i> Clinical Training Module</span>
-            <h1 class="training-header__title">Add Training Entry</h1>
-            <p class="training-header__subtitle">Record patient encounter, procedure details, supervisor info, and map curriculum competencies.</p>
+            <h1 class="training-header__title">{{ isset($entry) ? 'Edit Training Entry' : 'Add Training Entry' }}</h1>
+            <p class="training-header__subtitle">{{ isset($entry) ? 'Update clinical encounter details and resubmit for supervisor evaluation.' : 'Record patient encounter, procedure details, supervisor info, and map curriculum competencies.' }}</p>
         </div>
         <div class="training-header__actions">
             @include('partials.program-badge', ['program' => request('program', $program ?? '')])
@@ -593,6 +593,16 @@ textarea.field-control {
             </a>
         </div>
     </div>
+
+    @if(isset($entry) && $entry->supervisor_remarks)
+    <div class="modern-alert" style="background-color: #fffbeb; border: 1px solid #fde68a; color: #92400e;" role="alert">
+        <div class="modern-alert__icon"><i class="fa-solid fa-comment-dots"></i></div>
+        <div class="modern-alert__content">
+            <div class="modern-alert__title">Supervisor Remarks ({{ $entry->entry_status }}):</div>
+            <div style="font-size: 13.5px; line-height: 1.5;">{!! nl2br(e($entry->supervisor_remarks)) !!}</div>
+        </div>
+    </div>
+    @endif
 
     {{-- Server Error Alert (Only for general session flash errors) --}}
     @if(session('flash_err'))
@@ -605,8 +615,11 @@ textarea.field-control {
     @endif
 
     {{-- Form Container --}}
-    <form class="elog-form" action="{{ route('training.store') }}" method="post" id="trainingAddForm" novalidate>
+    <form class="elog-form" action="{{ isset($entry) ? route('training.update', $entry->id) : route('training.store') }}" method="post" id="trainingAddForm" novalidate>
         @csrf
+        @if(isset($entry))
+            @method('PUT')
+        @endif
         @if(request('program'))
             <input type="hidden" name="program" value="{{ request('program') }}">
         @endif
@@ -852,7 +865,7 @@ textarea.field-control {
                 {{-- Form Actions Bar --}}
                 <div class="form-actions-bar">
                     <button class="btn-form-submit" type="submit" name="submit2" id="mform_submit">
-                        <i class="fa-solid fa-check"></i> Submit Training Entry
+                        <i class="fa-solid fa-check"></i> {{ isset($entry) ? 'Update Training Entry' : 'Submit Training Entry' }}
                     </button>
                     <a href="{{ route('training.index', ['program' => request('program')]) }}" class="btn-form-cancel">
                         Cancel

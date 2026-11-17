@@ -19,7 +19,8 @@ class PublishedController extends Controller
 
         $entries = PublishedEntry::where('user_id', $userId)
             ->when($program !== '', fn($q) => $q->where('program', $program))
-            ->latest('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
 
         return view('published.index', compact('entries', 'program'));
@@ -83,6 +84,83 @@ class PublishedController extends Controller
 
         return redirect()->route('published.index', $params)
             ->with('flash_ok', 'Published entry saved successfully.');
+    }
+
+    public function edit(Request $request, int $id): View|RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = PublishedEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('published.index')
+                ->with('flash_err', 'This entry cannot be edited because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program = (string) ($request->input('program') ?? $entry->program ?? '');
+        $entryDefaults = [
+            'pub_date'    => $entry->pub_date ? $entry->pub_date->format('d-m-Y') : '',
+            'pub_title'   => $entry->pub_title,
+            'full_ref'    => $entry->full_ref,
+            'pub_journal' => $entry->pub_journal,
+            'pub_authors' => $entry->pub_authors,
+            'std_post'    => $entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : ($entry->std_post ?: 'No'),
+        ];
+        $formOld    = array_merge($entryDefaults, session()->pull('form_old', []), session()->getOldInput());
+        $formErrors = session()->pull('form_errors', []);
+
+        return view('published.create', compact('entry', 'program', 'formOld', 'formErrors'));
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = PublishedEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('published.index')
+                ->with('flash_err', 'This entry cannot be updated because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program = (string) $request->input('program', $entry->program ?? '');
+
+        $validator = Validator::make($request->all(), [
+            'pub_date'  => ['required', 'string'],
+            'pub_title' => ['required', 'string', 'max:500'],
+            'full_ref'  => ['required', 'string'],
+            'std_post'  => ['required', 'in:Yes,No'],
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $newStatus = $request->input('std_post') === 'Yes'
+            ? 'Awaiting Approval'
+            : ($entry->entry_status === 'Discuss and Resubmit' ? 'Discuss and Resubmit' : 'Draft');
+
+        $entry->update([
+            'pub_date'     => $this->parseBritishDate($request->input('pub_date', '')),
+            'pub_title'    => $request->input('pub_title'),
+            'full_ref'     => $request->input('full_ref'),
+            'pub_journal'  => (string) $request->input('pub_journal', $entry->pub_journal ?? ''),
+            'pub_authors'  => (string) $request->input('pub_authors', $entry->pub_authors ?? ''),
+            'std_post'     => $request->input('std_post') === 'Yes' ? 'Yes' : ($entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : 'No'),
+            'entry_status' => $newStatus,
+        ]);
+
+        $params = $program !== '' ? ['program' => $program] : [];
+
+        return redirect()->route('published.index', $params)
+            ->with('flash_ok', 'Published entry updated successfully.');
+    }
+
+    private function isEntryEditable(?string $status): bool
+    {
+        $s = strtolower(trim((string) ($status ?? '')));
+
+        return $s === '' || $s === 'draft' || $s === 'discuss and resubmit';
     }
 
     private function parseBritishDate(string $s): ?string

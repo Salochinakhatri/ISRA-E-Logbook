@@ -112,6 +112,21 @@
                                 @if($row->approved_at)
                                     <div>Approved: {{ $row->approved_at->format('d-m-Y') }}</div>
                                 @endif
+                                @if(!empty($row->supervisor_remarks))
+                                    <div style="margin-top: 6px; padding: 6px 8px; background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #d97706; border-radius: 5px; font-size: 11.5px; color: #78350f; line-height: 1.35; text-align: left;">
+                                        <div style="font-weight: 700; color: #b45309; margin-bottom: 2px;">
+                                            <i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:
+                                        </div>
+                                        <div>{{ $row->supervisor_remarks }}</div>
+                                    </div>
+                                @endif
+                                @if(in_array($row->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true))
+                                    <div style="margin-top: 6px;">
+                                        <a href="{{ route('rotational.edit', ['id' => $row->id, 'program' => request('program', $row->program)]) }}" class="btn btn--blue" style="padding: 3px 10px; font-size: 11.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fa-solid fa-pen-to-square"></i> {{ $row->entry_status === 'Discuss and Resubmit' ? 'Edit & Resubmit' : 'Edit' }}
+                                        </a>
+                                    </div>
+                                @endif
                             </div>
                         </td>
                     </tr>

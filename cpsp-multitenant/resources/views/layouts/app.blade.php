@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                {{-- Rotational Training --}}
+                <!-- {{-- Rotational Training --}}
                 <div class="elog-sidebar__group @yield('group_rotational', '')">
                     <button type="button" class="elog-sidebar__parent" id="rotationalToggle" aria-expanded="false">
                         <span class="elog-sidebar__parent-left"><i class="fa-solid fa-table-cells"></i><span>Rotational Training</span></span>
@@ -83,13 +83,13 @@
                         <a class="elog-sidebar__sublink @yield('nav_published_list', '')" href="{{ route('published.index', ['program' => request('program')]) }}">List all entries</a>
                         <a class="elog-sidebar__sublink @yield('nav_published_add', '')" href="{{ route('published.create', ['program' => request('program')]) }}">Add new</a>
                     </div>
-                </div>
+                </div> -->
 
                 {{-- Workshops / Synopsis / Dissertation --}}
                 <a class="elog-sidebar__link @yield('nav_academic_progression', '')" href="{{ route('academic.trainee') }}">
                     <i class="fa-solid fa-graduation-cap"></i><span>Workshops & Dissertation</span>
                 </a>
-
+<!-- 
                 {{-- Suggestions --}}
                 <div class="elog-sidebar__group @yield('group_suggestions', '')">
                     <button type="button" class="elog-sidebar__parent" id="suggestionsToggle" aria-expanded="false">
@@ -99,7 +99,7 @@
                     <div class="elog-sidebar__sub" id="suggestionsSubnav">
                         <a class="elog-sidebar__sublink @yield('nav_suggestions_list', '')" href="{{ route('suggestions.index', ['program' => request('program')]) }}">Suggestions / Feedback</a>
                     </div>
-                </div>
+                </div> -->
                 @else
                 {{-- Supervisor / Fellow Navigation --}}
                 @php

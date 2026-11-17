@@ -1235,7 +1235,11 @@
                         {{-- 1. # and Checkbox --}}
                         <td class="cell-idx">
                             <div class="sup-idx-wrap">
-                                <input type="checkbox" name="selected_entries[]" value="{{ $entry['type'] }}:{{ $entry['id'] }}" class="entry-checkbox" style="cursor: pointer;">
+                                @if($entry['entry_status'] === 'Approved')
+                                    <i class="fa-solid fa-lock" title="Approved entries are locked" style="color: #94a3b8; font-size: 12px;"></i>
+                                @else
+                                    <input type="checkbox" name="selected_entries[]" value="{{ $entry['type'] }}:{{ $entry['id'] }}" class="entry-checkbox" style="cursor: pointer;">
+                                @endif
                                 <span class="sup-idx-num">{{ $idx + 1 }}</span>
                             </div>
                         </td>
@@ -1656,11 +1660,42 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '</div>';
 
             // 5. Update Status Section with Dropdown (Approved, Discuss & Resubmit, etc.) and Submit Button
+            if (data.entry_status === 'Approved') {
+                html += '<div class="sup-modal-update-box" style="background: #f0fdf4; border-color: #bbf7d0;">';
+                html += '  <div class="sup-modal-update-title">';
+                html += '    <span style="color: #15803d;"><i class="fa-solid fa-lock"></i> Entry Approved &amp; Locked</span>';
+                html += '    <span>' + getStatusBadge(data.entry_status) + '</span>';
+                html += '  </div>';
+                html += '  <div style="font-size: 13px; color: #166534; line-height: 1.5;">';
+                html += '    This entry was approved' + (data.approved_by_name ? ' by <strong>' + escapeHtml(data.approved_by_name) + '</strong>' : '') + (data.approved_at ? ' on <strong>' + escapeHtml(data.approved_at) + '</strong>' : '') + '. Its status can no longer be changed.';
+                if (data.supervisor_remarks) {
+                    html += '    <div style="margin-top: 8px;"><strong>Remarks:</strong> ' + escapeHtml(data.supervisor_remarks) + '</div>';
+                }
+                html += '  </div>';
+                html += '</div>';
+
+                detailModalBody.innerHTML = html;
+                detailModal.hidden = false;
+                return;
+            }
+
             html += '<div class="sup-modal-update-box">';
             html += '  <div class="sup-modal-update-title">';
             html += '    <span><i class="fa-solid fa-pen-to-square"></i> Update Entry Status</span>';
             html += '    <span id="modalCurrentStatusBadge">' + getStatusBadge(data.entry_status) + '</span>';
             html += '  </div>';
+
+            if (data.supervisor_remarks) {
+                var isApp = (data.entry_status || '').toLowerCase().includes('approved');
+                var remBg = isApp ? '#f0fdf4' : '#fffbeb';
+                var remBorder = isApp ? '#bbf7d0' : '#fde68a';
+                var remLeft = isApp ? '#16a34a' : '#d97706';
+                var remColor = isApp ? '#166534' : '#78350f';
+                var remTitle = isApp ? '#15803d' : '#b45309';
+                html += '  <div style="margin-bottom: 12px; padding: 8px 12px; background: ' + remBg + '; border: 1px solid ' + remBorder + '; border-left: 3px solid ' + remLeft + '; border-radius: 6px; font-size: 12px; color: ' + remColor + ';">';
+                html += '    <strong style="color: ' + remTitle + ';"><i class="fa-solid fa-comment-dots"></i> Current Remarks:</strong> ' + escapeHtml(data.supervisor_remarks);
+                html += '  </div>';
+            }
 
             html += '  <form id="modalStatusFormAjax" data-type="' + data.type + '" data-id="' + data.id + '">';
             html += '    <div class="sup-modal-update-grid">';
@@ -1677,12 +1712,12 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '        </select>';
             html += '      </div>';
 
-            // Supervisor Remarks Textarea
+            // Supervisor Remarks Textarea (starts empty/null by default)
             html += '      <div>';
             html += '        <label for="modalStatusRemarks" style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">';
             html += '          Supervisor Remarks / Instructions';
             html += '        </label>';
-            html += '        <input type="text" name="supervisor_remarks" id="modalStatusRemarks" class="field__control" placeholder="Enter remarks or revision feedback..." value="' + escapeHtml(data.supervisor_remarks || '') + '">';
+            html += '        <input type="text" name="supervisor_remarks" id="modalStatusRemarks" class="field__control" placeholder="Enter remarks or revision feedback (optional)..." value="">';
             html += '      </div>';
 
             // Submit Button
@@ -1731,8 +1766,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                 })
                 .then(function (res) {
-                    if (!res.ok) throw new Error('HTTP error ' + res.status);
-                    return res.json();
+                    return res.json().catch(function () { return {}; }).then(function (body) {
+                        if (!res.ok) {
+                            var err = new Error(body.message || ('HTTP error ' + res.status));
+                            err.serverMessage = body.message || '';
+                            throw err;
+                        }
+                        return body;
+                    });
                 })
                 .then(function (result) {
                     submitBtn.disabled = false;
@@ -1775,13 +1816,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     setTimeout(function () {
                         submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit';
                     }, 2500);
+
+                    // Once approved, lock the entry: disable the form and remove its row checkbox
+                    if (newStatus === 'Approved') {
+                        statusDropdown.disabled = true;
+                        remarksInput.disabled = true;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Locked';
+                        feedbackDiv.innerHTML = '<i class="fa-solid fa-lock"></i> Entry approved and locked. Its status can no longer be changed.';
+                        if (row) {
+                            var rowCb = row.querySelector('.entry-checkbox');
+                            if (rowCb) {
+                                var lockIcon = document.createElement('i');
+                                lockIcon.className = 'fa-solid fa-lock';
+                                lockIcon.title = 'Approved entries are locked';
+                                lockIcon.style.cssText = 'color: #94a3b8; font-size: 12px;';
+                                rowCb.replaceWith(lockIcon);
+                                itemCheckboxes = document.querySelectorAll('.entry-checkbox');
+                                updateSelectedState();
+                            }
+                        }
+                    }
                 })
                 .catch(function (err) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit';
                     feedbackDiv.style.display = 'block';
                     feedbackDiv.style.color = '#dc2626';
-                    feedbackDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Error updating status. Please try again.';
+                    feedbackDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + escapeHtml(err.serverMessage || 'Error updating status. Please try again.');
                 });
             });
         });

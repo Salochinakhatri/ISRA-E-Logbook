@@ -787,12 +787,27 @@ select.filter-control {
                                 @if($row->approved_at)
                                     <span class="entry-date-sub" style="color: #065f46; font-weight: 600;">Appr: {{ $row->approved_at->format('d-m-Y') }}</span>
                                 @endif
+                                @if(!empty($row->supervisor_remarks))
+                                    <div style="margin-top: 6px; padding: 6px 8px; background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #d97706; border-radius: 5px; font-size: 11.5px; color: #78350f; line-height: 1.35; max-width: 240px;">
+                                        <div style="font-weight: 700; color: #b45309; margin-bottom: 2px;">
+                                            <i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:
+                                        </div>
+                                        <div>{{ $row->supervisor_remarks }}</div>
+                                    </div>
+                                @endif
                             </div>
                         </td>
                         <td style="text-align: center;">
-                            <a class="btn-action-view" href="{{ route('training.show', $row->id) }}" title="View Entry Details">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
+                            <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                <a class="btn-action-view" href="{{ route('training.show', $row->id) }}" title="View Entry Details">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                @if(in_array($row->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true))
+                                <a class="btn-action-view" href="{{ route('training.edit', ['id' => $row->id, 'program' => request('program', $row->program)]) }}" title="{{ $row->entry_status === 'Discuss and Resubmit' ? 'Edit & Resubmit Entry' : 'Edit Entry' }}" style="color: #d97706; border-color: #fde68a; background: #fffbeb;">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty

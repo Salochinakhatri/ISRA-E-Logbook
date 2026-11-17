@@ -368,7 +368,7 @@ body {
 .modal {
     position: fixed;
     inset: 0;
-    z-index: 100;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1905,6 +1905,7 @@ body {
     border-color: #7aabda;
     color: #1a4e8a;
 }
+
 /* =====================================================
    Rotational Training List - filter notice styles
    ===================================================== */
@@ -1940,6 +1941,7 @@ body {
 }
 
 @media (max-width: 768px) {
+
     .rot-filters__row1,
     .rot-filters__row2 {
         grid-template-columns: 1fr !important;
@@ -1985,9 +1987,11 @@ body {
 }
 
 .elog-sidebar__program-link.is-active {
-    background: #063725 !important; /* Extremely dark green matching the images */
+    background: #063725 !important;
+    /* Extremely dark green matching the images */
     color: #ffffff !important;
-    border-left: 4px solid #f0ad4e; /* Nice warm accent border */
+    border-left: 4px solid #f0ad4e;
+    /* Nice warm accent border */
 }
 
 /* ePortal toggle styles */
@@ -2395,7 +2399,7 @@ button.competency-tree__toggle:hover {
     border: 1px solid #d2d6de;
     border-radius: 3px;
     margin-bottom: 20px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .sup-panel__header {
@@ -2843,6 +2847,7 @@ button.competency-tree__toggle:hover {
 .btn-icon-action--view {
     background-color: #6c757d;
 }
+
 .btn-icon-action--view:hover {
     background-color: #5a6268;
 }
@@ -2850,6 +2855,7 @@ button.competency-tree__toggle:hover {
 .btn-icon-action--approve {
     background-color: #28a745;
 }
+
 .btn-icon-action--approve:hover {
     background-color: #218838;
 }
@@ -2857,6 +2863,7 @@ button.competency-tree__toggle:hover {
 .btn-icon-action--pending {
     background-color: #ff9800;
 }
+
 .btn-icon-action--pending:hover {
     background-color: #e68a00;
 }
@@ -2864,6 +2871,7 @@ button.competency-tree__toggle:hover {
 .btn-icon-action--discuss {
     background-color: #6f42c1;
 }
+
 .btn-icon-action--discuss:hover {
     background-color: #5a32a3;
 }
@@ -3064,8 +3072,8 @@ button.competency-tree__toggle:hover {
     -ms-overflow-style: -ms-autohiding-scrollbar;
 }
 
-.table-responsive > .sup-table,
-.table-responsive > table {
+.table-responsive>.sup-table,
+.table-responsive>table {
     margin-bottom: 0;
     min-width: 820px;
 }
@@ -3076,6 +3084,7 @@ button.competency-tree__toggle:hover {
 
 /* Tablet & Mobile Responsiveness (<= 768px) */
 @media (max-width: 768px) {
+
     /* Supervisor Dashboard */
     .supervisor-dash {
         padding: 5px 0 25px;
@@ -3428,6 +3437,7 @@ option {
         opacity: 0;
         transform: translateY(-3px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -3472,13 +3482,16 @@ option {
 .resp-select-dropdown::-webkit-scrollbar {
     width: 6px;
 }
+
 .resp-select-dropdown::-webkit-scrollbar-track {
     background: #f8fafc;
 }
+
 .resp-select-dropdown::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
 }
+
 .resp-select-dropdown::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
@@ -3543,4 +3556,3 @@ option {
         max-height: 230px;
     }
 }
-

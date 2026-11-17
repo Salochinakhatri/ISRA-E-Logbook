@@ -50,110 +50,132 @@ class DashboardController extends Controller
 
             $trainings = TrainingEntry::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Training',
-                    'title'      => $item->pt_diagnosis ? "Training: {$item->pt_diagnosis}" : "Training entry #{$item->id}",
-                    'meta'       => ($item->hospt_reg_no ? "Reg No: {$item->hospt_reg_no} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
-                    'status'     => $item->entry_status ?? 'Draft',
-                    'icon'       => 'fa-solid fa-file-medical',
-                    'badge_bg'   => '#e8f5e9',
-                    'badge_text' => '#1b5e20',
-                    'url'        => route('training.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Training',
+                    'title'              => $item->pt_diagnosis ? "Training: {$item->pt_diagnosis}" : "Training entry #{$item->id}",
+                    'meta'               => ($item->hospt_reg_no ? "Reg No: {$item->hospt_reg_no} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
+                    'status'             => $item->entry_status ?? 'Draft',
+                    'supervisor_remarks' => $item->supervisor_remarks ?? '',
+                    'icon'               => 'fa-solid fa-file-medical',
+                    'badge_bg'           => '#e8f5e9',
+                    'badge_text'         => '#1b5e20',
+                    'url'                => in_array($item->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true)
+                        ? route('training.edit', ['id' => $item->id] + ($program !== '' ? ['program' => $program] : []))
+                        : route('training.show', $item->id),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $rotationals = RotationalEntry::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Rotational',
-                    'title'      => $item->department ? "Rotational: {$item->department}" : "Rotational entry #{$item->id}",
-                    'meta'       => ($item->hospt_reg_no ? "Reg No: {$item->hospt_reg_no} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
-                    'status'     => $item->entry_status ?? 'Draft',
-                    'icon'       => 'fa-solid fa-table-cells',
-                    'badge_bg'   => '#e3f2fd',
-                    'badge_text' => '#0d47a1',
-                    'url'        => route('rotational.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Rotational',
+                    'title'              => $item->pt_diagnosis ? "Rotational: {$item->pt_diagnosis}" : "Rotational entry #{$item->id}",
+                    'meta'               => ($item->hospt_reg_no ? "Reg No: {$item->hospt_reg_no} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
+                    'status'             => $item->entry_status ?? 'Draft',
+                    'supervisor_remarks' => $item->supervisor_remarks ?? '',
+                    'icon'               => 'fa-solid fa-table-cells',
+                    'badge_bg'           => '#e3f2fd',
+                    'badge_text'         => '#0d47a1',
+                    'url'                => in_array($item->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true)
+                        ? route('rotational.edit', ['id' => $item->id] + ($program !== '' ? ['program' => $program] : []))
+                        : route('rotational.index', $program !== '' ? ['program' => $program] : []),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $journals = JournalEntry::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Journal Club',
-                    'title'      => "Journal: " . ($item->topic ?: ($item->ref_of_art_disc ?: 'Journal Club entry')),
-                    'meta'       => ($item->fac_by ? "Facilitator: {$item->fac_by} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
-                    'status'     => $item->entry_status ?? 'Draft',
-                    'icon'       => 'fa-solid fa-book-journal-whills',
-                    'badge_bg'   => '#f3e5f5',
-                    'badge_text' => '#4a148c',
-                    'url'        => route('journal.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Journal Club',
+                    'title'              => "Journal: " . ($item->topic ?: ($item->ref_of_art_disc ?: 'Journal Club entry')),
+                    'meta'               => ($item->fac_by ? "Facilitator: {$item->fac_by} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
+                    'status'             => $item->entry_status ?? 'Draft',
+                    'supervisor_remarks' => $item->supervisor_remarks ?? '',
+                    'icon'               => 'fa-solid fa-book-journal-whills',
+                    'badge_bg'           => '#f3e5f5',
+                    'badge_text'         => '#4a148c',
+                    'url'                => in_array($item->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true)
+                        ? route('journal.edit', ['id' => $item->id] + ($program !== '' ? ['program' => $program] : []))
+                        : route('journal.index', $program !== '' ? ['program' => $program] : []),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $presenteds = PresentedEntry::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Paper Presented',
-                    'title'      => "Presentation: " . ($item->rec_title ?: 'Paper/Poster Presented'),
-                    'meta'       => ($item->rec_venue ? "Venue: {$item->rec_venue} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
-                    'status'     => $item->entry_status ?? 'Draft',
-                    'icon'       => 'fa-solid fa-chalkboard-user',
-                    'badge_bg'   => '#fff3e0',
-                    'badge_text' => '#e65100',
-                    'url'        => route('presented.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Paper Presented',
+                    'title'              => "Presentation: " . ($item->rec_title ?: 'Paper/Poster Presented'),
+                    'meta'               => ($item->rec_venue ? "Venue: {$item->rec_venue} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
+                    'status'             => $item->entry_status ?? 'Draft',
+                    'supervisor_remarks' => $item->supervisor_remarks ?? '',
+                    'icon'               => 'fa-solid fa-chalkboard-user',
+                    'badge_bg'           => '#fff3e0',
+                    'badge_text'         => '#e65100',
+                    'url'                => in_array($item->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true)
+                        ? route('presented.edit', ['id' => $item->id] + ($program !== '' ? ['program' => $program] : []))
+                        : route('presented.index', $program !== '' ? ['program' => $program] : []),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $publisheds = PublishedEntry::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Paper Published',
-                    'title'      => "Published: " . ($item->rec_title ?: 'Paper Published'),
-                    'meta'       => ($item->rec_journal ? "Journal: {$item->rec_journal} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
-                    'status'     => $item->entry_status ?? 'Draft',
-                    'icon'       => 'fa-solid fa-newspaper',
-                    'badge_bg'   => '#e0f2f1',
-                    'badge_text' => '#004d40',
-                    'url'        => route('published.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Paper Published',
+                    'title'              => "Published: " . ($item->pub_title ?: 'Paper Published'),
+                    'meta'               => ($item->pub_journal ? "Journal: {$item->pub_journal} | " : '') . "Status: " . ($item->entry_status ?? 'Draft'),
+                    'status'             => $item->entry_status ?? 'Draft',
+                    'supervisor_remarks' => $item->supervisor_remarks ?? '',
+                    'icon'               => 'fa-solid fa-newspaper',
+                    'badge_bg'           => '#e0f2f1',
+                    'badge_text'         => '#004d40',
+                    'url'                => in_array($item->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true)
+                        ? route('published.edit', ['id' => $item->id] + ($program !== '' ? ['program' => $program] : []))
+                        : route('published.index', $program !== '' ? ['program' => $program] : []),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $suggestions = Suggestion::where('user_id', $userId)
                 ->when($program !== '', fn($q) => $q->where('program', $program))
-                ->latest('created_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->limit(5)
                 ->get()
                 ->map(fn($item) => [
-                    'id'         => $item->id,
-                    'section'    => 'Suggestion',
-                    'title'      => "Suggestion: " . \Illuminate\Support\Str::limit($item->suggestion_text, 60),
-                    'meta'       => 'Submitted feedback',
-                    'status'     => 'Submitted',
-                    'icon'       => 'fa-solid fa-lightbulb',
-                    'badge_bg'   => '#fbe9e7',
-                    'badge_text' => '#bf360c',
-                    'url'        => route('suggestions.index', $program !== '' ? ['program' => $program] : []),
-                    'created_at' => $item->created_at,
+                    'id'                 => $item->id,
+                    'section'            => 'Suggestion',
+                    'title'              => "Suggestion: " . \Illuminate\Support\Str::limit($item->suggestion_text, 60),
+                    'meta'               => 'Submitted feedback',
+                    'status'             => 'Submitted',
+                    'supervisor_remarks' => '',
+                    'icon'               => 'fa-solid fa-lightbulb',
+                    'badge_bg'           => '#fbe9e7',
+                    'badge_text'         => '#bf360c',
+                    'url'                => route('suggestions.index', $program !== '' ? ['program' => $program] : []),
+                    'created_at'         => $item->created_at,
                 ]);
 
             $recentActivities = $recentActivities
@@ -163,7 +185,10 @@ class DashboardController extends Controller
                 ->concat($presenteds)
                 ->concat($publisheds)
                 ->concat($suggestions)
-                ->sortByDesc('created_at')
+                ->sortByDesc(fn($item) => [
+                    $item['created_at'] ? $item['created_at']->getTimestamp() : 0,
+                    (int) ($item['id'] ?? 0),
+                ])
                 ->take(8)
                 ->values();
 

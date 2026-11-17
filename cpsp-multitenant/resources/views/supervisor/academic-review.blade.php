@@ -259,6 +259,12 @@
     border: 1px solid #bbf7d0;
 }
 
+.badge-discuss {
+    background-color: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
 .badge-submitted,
 .badge-in-progress,
 .badge-under-review {
@@ -267,10 +273,122 @@
     border: 1px solid #fde68a;
 }
 
-.badge-pending {
+.badge-pending,
+.badge-awaiting {
     background-color: #e0f2fe;
     color: #0369a1;
     border: 1px solid #bae6fd;
+}
+
+/* Modal styles for status update */
+.arm-modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 1050;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.arm-modal-backdrop.is-open {
+    display: flex;
+}
+.arm-modal-dialog {
+    background: #ffffff;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.arm-modal-header {
+    background: linear-gradient(135deg, #0b6040 0%, #0d7a52 100%);
+    color: #ffffff;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.arm-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.arm-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+.arm-modal-body {
+    padding: 20px;
+}
+.arm-modal-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.btn-arm-secondary {
+    padding: 7px 16px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #334155;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-arm-primary {
+    padding: 7px 16px;
+    background: #0b6040;
+    border: 1.5px solid #0b6040;
+    color: #ffffff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-set-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-set-status:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
 }
 
 .badge-rejected {
@@ -353,6 +471,17 @@
         </div>
     </div>
 
+    @if(session('success'))
+        <div style="background: #dcfce7; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Section 1: Workshop Details --}}
     <div class="academic-section-card" id="sectionWorkshops">
         <div class="academic-section-header">
@@ -361,9 +490,6 @@
             </h2>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="academic-badge-count">{{ count($workshops) }} Workshops</span>
-                <button type="button" class="btn-academic-back" style="font-size: 12px; padding: 4px 10px;" onclick="openAddWorkshopModal()">
-                    <i class="fa-solid fa-plus"></i> Add Workshop
-                </button>
             </div>
         </div>
         <div class="academic-table-wrap">
@@ -372,9 +498,9 @@
                     <tr>
                         <th class="col-hash">#</th>
                         <th>Workshop Name</th>
-                        <th style="width: 200px;">Time Duration</th>
-                        <th style="width: 160px;">Status</th>
-                        <th style="width: 70px; text-align: center;">Action</th>
+                        <th style="width: 180px;">Time Duration</th>
+                        <th style="width: 180px;">Status</th>
+                        <th style="width: 160px; text-align: center;">Supervisor Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -383,6 +509,14 @@
                         <td class="col-hash">{{ $index + 1 }}</td>
                         <td>
                             <strong style="color: #0f172a;">{{ $w->workshop_name }}</strong>
+                            @if(!empty($w->remarks))
+                                @php
+                                    $isWApp = str_contains(strtolower((string)$w->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isWApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isWApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isWApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isWApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isWApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $w->remarks }}
+                                </div>
+                            @endif
                         </td>
                         <td>
                             <i class="fa-regular fa-clock" style="color: #64748b; margin-right: 6px;"></i>
@@ -392,31 +526,37 @@
                             @php
                                 $wStatus = strtolower(trim((string)$w->status));
                                 $badgeClass = match(true) {
-                                    str_contains($wStatus, 'completed') || str_contains($wStatus, 'passed') => 'badge-completed',
-                                    str_contains($wStatus, 'progress') || str_contains($wStatus, 'submitted') => 'badge-in-progress',
-                                    str_contains($wStatus, 'pending') => 'badge-pending',
-                                    default => 'badge-completed',
+                                    str_contains($wStatus, 'approved') || str_contains($wStatus, 'completed') => 'badge-approved',
+                                    str_contains($wStatus, 'discuss') || str_contains($wStatus, 'resubmit') => 'badge-discuss',
+                                    default => 'badge-pending',
+                                };
+                                $iconClass = match(true) {
+                                    str_contains($wStatus, 'approved') || str_contains($wStatus, 'completed') => 'fa-circle-check',
+                                    str_contains($wStatus, 'discuss') || str_contains($wStatus, 'resubmit') => 'fa-comments',
+                                    default => 'fa-clock',
                                 };
                             @endphp
                             <span class="academic-status-badge {{ $badgeClass }}">
-                                <i class="fa-solid fa-circle-check"></i> {{ $w->status ?: 'Completed' }}
+                                <i class="fa-solid {{ $iconClass }}"></i> {{ $w->status ?: 'Awaiting Approval' }}
                             </span>
                         </td>
                         <td style="text-align: center;">
-                            <form method="POST" action="{{ route('academic.workshop.delete', ['id' => $trainee->id, 'workshopId' => $w->id]) }}" onsubmit="return confirm('Delete this workshop?');" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;" title="Delete workshop">
-                                    <i class="fa-regular fa-trash-can"></i>
+                            @if(strtolower(trim((string)$w->status)) === 'approved')
+                                <span style="font-size: 12.5px; color: #166534; font-weight: 700;">
+                                    <i class="fa-solid fa-lock"></i> Approved &amp; Locked
+                                </span>
+                            @else
+                                <button type="button" class="btn-set-status" onclick="openUpdateAcademicStatusModal('workshop', {{ $w->id }}, @js($w->workshop_name), @js($w->status ?: 'Awaiting Approval'), @js($w->remarks ?? ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Set Status
                                 </button>
-                            </form>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="5" class="table-empty-row">
                             <i class="fa-regular fa-folder-open" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                            No workshop records found for this trainee.
+                            No workshop records submitted by this trainee yet.
                         </td>
                     </tr>
                     @endforelse
@@ -433,9 +573,6 @@
             </h2>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="academic-badge-count">{{ count($synopses) }} Synopsis</span>
-                <button type="button" class="btn-academic-back" style="font-size: 12px; padding: 4px 10px;" onclick="openAddSynopsisModal()">
-                    <i class="fa-solid fa-plus"></i> Add Synopsis
-                </button>
             </div>
         </div>
         <div class="academic-table-wrap">
@@ -444,9 +581,9 @@
                     <tr>
                         <th class="col-hash">#</th>
                         <th>Synopsis Name</th>
-                        <th style="width: 160px;">Status</th>
-                        <th style="width: 160px;">Status Date</th>
-                        <th style="width: 70px; text-align: center;">Action</th>
+                        <th style="width: 180px;">Status</th>
+                        <th style="width: 150px;">Status Date</th>
+                        <th style="width: 160px; text-align: center;">Supervisor Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -455,9 +592,12 @@
                         <td class="col-hash">{{ $index + 1 }}</td>
                         <td>
                             <strong style="color: #0f172a;">{{ $s->synopsis_name }}</strong>
-                            @if($s->remarks)
-                                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-                                    <i class="fa-regular fa-comment-dots"></i> {{ $s->remarks }}
+                            @if(!empty($s->remarks))
+                                @php
+                                    $isSApp = str_contains(strtolower((string)$s->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isSApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isSApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isSApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isSApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isSApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $s->remarks }}
                                 </div>
                             @endif
                         </td>
@@ -466,13 +606,17 @@
                                 $sStatus = strtolower(trim((string)$s->status));
                                 $sBadgeClass = match(true) {
                                     str_contains($sStatus, 'approved') || str_contains($sStatus, 'accepted') => 'badge-approved',
-                                    str_contains($sStatus, 'review') || str_contains($sStatus, 'submitted') => 'badge-under-review',
-                                    str_contains($sStatus, 'rejected') => 'badge-rejected',
-                                    default => 'badge-approved',
+                                    str_contains($sStatus, 'discuss') || str_contains($sStatus, 'resubmit') => 'badge-discuss',
+                                    default => 'badge-pending',
+                                };
+                                $sIconClass = match(true) {
+                                    str_contains($sStatus, 'approved') || str_contains($sStatus, 'accepted') => 'fa-stamp',
+                                    str_contains($sStatus, 'discuss') || str_contains($sStatus, 'resubmit') => 'fa-comments',
+                                    default => 'fa-clock',
                                 };
                             @endphp
                             <span class="academic-status-badge {{ $sBadgeClass }}">
-                                <i class="fa-solid fa-stamp"></i> {{ $s->status ?: 'Approved' }}
+                                <i class="fa-solid {{ $sIconClass }}"></i> {{ $s->status ?: 'Awaiting Approval' }}
                             </span>
                         </td>
                         <td>
@@ -480,20 +624,22 @@
                             {{ $s->status_date ? $s->status_date->format('d/m/Y') : ($s->created_at ? $s->created_at->format('d/m/Y') : '—') }}
                         </td>
                         <td style="text-align: center;">
-                            <form method="POST" action="{{ route('academic.synopsis.delete', ['id' => $trainee->id, 'synopsisId' => $s->id]) }}" onsubmit="return confirm('Delete this synopsis?');" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;" title="Delete synopsis">
-                                    <i class="fa-regular fa-trash-can"></i>
+                            @if(strtolower(trim((string)$s->status)) === 'approved')
+                                <span style="font-size: 12.5px; color: #166534; font-weight: 700;">
+                                    <i class="fa-solid fa-lock"></i> Approved &amp; Locked
+                                </span>
+                            @else
+                                <button type="button" class="btn-set-status" onclick="openUpdateAcademicStatusModal('synopsis', {{ $s->id }}, @js($s->synopsis_name), @js($s->status ?: 'Awaiting Approval'), @js($s->remarks ?? ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Set Status
                                 </button>
-                            </form>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="5" class="table-empty-row">
                             <i class="fa-regular fa-folder-open" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                            No synopsis records found for this trainee.
+                            No synopsis records submitted by this trainee yet.
                         </td>
                     </tr>
                     @endforelse
@@ -510,9 +656,6 @@
             </h2>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="academic-badge-count">{{ count($dissertations) }} Dissertation</span>
-                <button type="button" class="btn-academic-back" style="font-size: 12px; padding: 4px 10px;" onclick="openAddDissertationModal()">
-                    <i class="fa-solid fa-plus"></i> Add Dissertation
-                </button>
             </div>
         </div>
         <div class="academic-table-wrap">
@@ -520,10 +663,10 @@
                 <thead>
                     <tr>
                         <th class="col-hash">#</th>
-                        <th style="width: 220px;">Application Date</th>
-                        <th style="width: 160px;">Status</th>
-                        <th style="width: 160px;">Status Date</th>
-                        <th style="width: 70px; text-align: center;">Action</th>
+                        <th>Application Date &amp; Title</th>
+                        <th style="width: 180px;">Status</th>
+                        <th style="width: 150px;">Status Date</th>
+                        <th style="width: 160px; text-align: center;">Supervisor Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -540,19 +683,31 @@
                                     {{ $d->dissertation_title }}
                                 </div>
                             @endif
+                            @if(!empty($d->remarks))
+                                @php
+                                    $isDApp = str_contains(strtolower((string)$d->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isDApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isDApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isDApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isDApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isDApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $d->remarks }}
+                                </div>
+                            @endif
                         </td>
                         <td>
                             @php
                                 $dStatus = strtolower(trim((string)$d->status));
                                 $dBadgeClass = match(true) {
                                     str_contains($dStatus, 'approved') || str_contains($dStatus, 'accepted') => 'badge-approved',
-                                    str_contains($dStatus, 'submitted') || str_contains($dStatus, 'evaluation') => 'badge-in-progress',
-                                    str_contains($dStatus, 'rejected') => 'badge-rejected',
-                                    default => 'badge-in-progress',
+                                    str_contains($dStatus, 'discuss') || str_contains($dStatus, 'resubmit') => 'badge-discuss',
+                                    default => 'badge-pending',
+                                };
+                                $dIconClass = match(true) {
+                                    str_contains($dStatus, 'approved') || str_contains($dStatus, 'accepted') => 'fa-file-circle-check',
+                                    str_contains($dStatus, 'discuss') || str_contains($dStatus, 'resubmit') => 'fa-comments',
+                                    default => 'fa-clock',
                                 };
                             @endphp
                             <span class="academic-status-badge {{ $dBadgeClass }}">
-                                <i class="fa-solid fa-file-circle-check"></i> {{ $d->status ?: 'Submitted' }}
+                                <i class="fa-solid {{ $dIconClass }}"></i> {{ $d->status ?: 'Awaiting Approval' }}
                             </span>
                         </td>
                         <td>
@@ -560,20 +715,22 @@
                             {{ $d->status_date ? $d->status_date->format('d/m/Y') : '—' }}
                         </td>
                         <td style="text-align: center;">
-                            <form method="POST" action="{{ route('academic.dissertation.delete', ['id' => $trainee->id, 'dissId' => $d->id]) }}" onsubmit="return confirm('Delete this dissertation?');" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;" title="Delete dissertation">
-                                    <i class="fa-regular fa-trash-can"></i>
+                            @if(strtolower(trim((string)$d->status)) === 'approved')
+                                <span style="font-size: 12.5px; color: #166534; font-weight: 700;">
+                                    <i class="fa-solid fa-lock"></i> Approved &amp; Locked
+                                </span>
+                            @else
+                                <button type="button" class="btn-set-status" onclick="openUpdateAcademicStatusModal('dissertation', {{ $d->id }}, @js($d->dissertation_title ?: 'Dissertation Submission'), @js($d->status ?: 'Awaiting Approval'), @js($d->remarks ?? ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Set Status
                                 </button>
-                            </form>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
                         <td colspan="5" class="table-empty-row">
                             <i class="fa-regular fa-folder-open" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                            No dissertation records found for this trainee.
+                            No dissertation records submitted by this trainee yet.
                         </td>
                     </tr>
                     @endforelse
@@ -583,120 +740,45 @@
     </div>
 </div>
 
-{{-- Add Workshop Modal --}}
-<div class="arm-modal-backdrop" id="modalAddWorkshop" tabindex="-1">
-    <div class="arm-modal-dialog" style="max-width: 520px;">
+{{-- Supervisor Set Academic Status Modal --}}
+<div class="arm-modal-backdrop" id="modalUpdateAcademicStatus" tabindex="-1">
+    <div class="arm-modal-dialog" style="max-width: 480px;">
         <div class="arm-modal-header">
-            <h3 class="arm-modal-title"><i class="fa-solid fa-chalkboard-user"></i> Add Workshop</h3>
-            <button type="button" class="arm-modal-close" onclick="closeModal('modalAddWorkshop')">&times;</button>
+            <h3 class="arm-modal-title" id="statusModalHeading"><i class="fa-solid fa-pen-to-square"></i> Set Approval Status</h3>
+            <button type="button" class="arm-modal-close" onclick="closeModal('modalUpdateAcademicStatus')">&times;</button>
         </div>
-        <form method="POST" action="{{ route('academic.workshop.store', ['id' => $trainee->id]) }}">
+        <form method="POST" id="academicStatusForm" action="">
             @csrf
             <div class="arm-modal-body">
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Workshop Name *</label>
-                    <input type="text" name="workshop_name" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;" placeholder="e.g. Basic Surgical Skills (BSS)">
+                <div style="margin-bottom: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+                    <span style="font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; display: block;">Record:</span>
+                    <div id="statusModalItemName" style="font-weight: 700; color: #0f172a; font-size: 13.5px; margin-top: 3px;"></div>
                 </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Time Duration *</label>
-                    <input type="text" name="time_duration" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;" placeholder="e.g. 3 Days, 4 Days">
-                </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status *</label>
-                    <select name="status" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-                        <option value="Completed">Completed</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Registered">Registered</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status Date</label>
-                    <input type="date" name="status_date" value="{{ date('Y-m-d') }}" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-                </div>
-            </div>
-            <div class="arm-modal-footer">
-                <button type="button" class="btn-arm-secondary" onclick="closeModal('modalAddWorkshop')">Cancel</button>
-                <button type="submit" class="btn-arm-primary">Save Workshop</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-{{-- Add Synopsis Modal --}}
-<div class="arm-modal-backdrop" id="modalAddSynopsis" tabindex="-1">
-    <div class="arm-modal-dialog" style="max-width: 520px;">
-        <div class="arm-modal-header">
-            <h3 class="arm-modal-title"><i class="fa-solid fa-file-waveform"></i> Add Synopsis</h3>
-            <button type="button" class="arm-modal-close" onclick="closeModal('modalAddSynopsis')">&times;</button>
-        </div>
-        <form method="POST" action="{{ route('academic.synopsis.store', ['id' => $trainee->id]) }}">
-            @csrf
-            <div class="arm-modal-body">
                 <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Synopsis Name / Title *</label>
-                    <textarea name="synopsis_name" rows="3" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;" placeholder="Full synopsis title..."></textarea>
-                </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status *</label>
-                    <select name="status" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
+                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:5px;color:#334155;">Approval Status <span style="color:#ef4444;">*</span></label>
+                    <select name="status" id="academicStatusSelect" required style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:13.5px;font-weight:600;">
                         <option value="Approved">Approved</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Submitted">Submitted to RTMC</option>
-                        <option value="Rejected">Rejected</option>
+                        <option value="Discuss and Resubmit">Discuss and Resubmit</option>
+                        <option value="Awaiting Approval">Awaiting Approval (Pending)</option>
                     </select>
                 </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status Date</label>
-                    <input type="date" name="status_date" value="{{ date('Y-m-d') }}" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-                </div>
-                <div>
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Remarks (Optional)</label>
-                    <input type="text" name="remarks" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;" placeholder="Optional remarks...">
-                </div>
-            </div>
-            <div class="arm-modal-footer">
-                <button type="button" class="btn-arm-secondary" onclick="closeModal('modalAddSynopsis')">Cancel</button>
-                <button type="submit" class="btn-arm-primary">Save Synopsis</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-{{-- Add Dissertation Modal --}}
-<div class="arm-modal-backdrop" id="modalAddDissertation" tabindex="-1">
-    <div class="arm-modal-dialog" style="max-width: 520px;">
-        <div class="arm-modal-header">
-            <h3 class="arm-modal-title"><i class="fa-solid fa-book-open-reader"></i> Add Dissertation</h3>
-            <button type="button" class="arm-modal-close" onclick="closeModal('modalAddDissertation')">&times;</button>
-        </div>
-        <form method="POST" action="{{ route('academic.dissertation.store', ['id' => $trainee->id]) }}">
-            @csrf
-            <div class="arm-modal-body">
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Application Date *</label>
-                    <input type="date" name="application_date" required value="{{ date('Y-m-d') }}" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-                </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Dissertation Title</label>
-                    <textarea name="dissertation_title" rows="2" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;" placeholder="Title of dissertation manuscript..."></textarea>
-                </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status *</label>
-                    <select name="status" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
-                        <option value="Submitted">Submitted</option>
-                        <option value="Under Evaluation">Under Evaluation</option>
-                        <option value="Approved">Approved / Accepted</option>
-                        <option value="Rejected">Rejected</option>
-                    </select>
-                </div>
                 <div>
-                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:4px;">Status Date</label>
-                    <input type="date" name="status_date" value="{{ date('Y-m-d') }}" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                        <label style="font-weight:600;font-size:13px;margin:0;color:#334155;">Supervisor Remarks / Feedback <span style="font-size:11.5px;color:#64748b;font-weight:normal;">(Optional)</span></label>
+                        <button type="button" onclick="document.getElementById('academicStatusRemarks').value='';" style="background:none;border:none;color:#0b6040;font-size:12px;font-weight:600;cursor:pointer;padding:0;">Clear remarks</button>
+                    </div>
+                    <textarea name="remarks" id="academicStatusRemarks" rows="3" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;" placeholder="Leave empty for no remarks, or enter comments for the trainee..."></textarea>
+                </div>
+
+                <div style="margin-top: 10px; font-size: 11.5px; color: #64748b;">
+                    <i class="fa-solid fa-circle-info"></i> Note: If remarks are provided, they will appear on both supervisor and trainee records. If left empty, no remarks will be shown.
                 </div>
             </div>
             <div class="arm-modal-footer">
-                <button type="button" class="btn-arm-secondary" onclick="closeModal('modalAddDissertation')">Cancel</button>
-                <button type="submit" class="btn-arm-primary">Save Dissertation</button>
+                <button type="button" class="btn-arm-secondary" onclick="closeModal('modalUpdateAcademicStatus')">Cancel</button>
+                <button type="submit" class="btn-arm-primary"><i class="fa-solid fa-paper-plane"></i> Save Status</button>
             </div>
         </form>
     </div>
@@ -704,18 +786,61 @@
 
 @push('scripts')
 <script>
-function openAddWorkshopModal() {
-    var m = document.getElementById('modalAddWorkshop');
+var originalRemarksPerItem = {};
+
+function openUpdateAcademicStatusModal(type, itemId, itemName, currentStatus, currentRemarks) {
+    var form = document.getElementById('academicStatusForm');
+    var heading = document.getElementById('statusModalHeading');
+    var nameEl = document.getElementById('statusModalItemName');
+    var select = document.getElementById('academicStatusSelect');
+    var remarks = document.getElementById('academicStatusRemarks');
+
+    var typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+    heading.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Set ' + typeLabel + ' Status';
+    nameEl.textContent = itemName || (typeLabel + ' #' + itemId);
+
+    var cleanStatus = (currentStatus || '').trim();
+    select.value = (cleanStatus === 'Approved' || cleanStatus === 'Discuss and Resubmit' || cleanStatus === 'Awaiting Approval')
+        ? cleanStatus
+        : 'Approved';
+
+    // Store original remarks so switching dropdown behaves intuitively
+    var itemKey = type + '_' + itemId;
+    originalRemarksPerItem[itemKey] = currentRemarks || '';
+
+    // If opening to Approve an item that was previously in Discuss and Resubmit,
+    // don't carry over the old revision instructions into the remarks textarea by default,
+    // but allow supervisor to enter any new approval remarks if desired
+    if (select.value === 'Approved' && cleanStatus.toLowerCase().indexOf('discuss') !== -1) {
+        remarks.value = '';
+        remarks.placeholder = 'Optional remarks on approval (leave blank for none)...';
+    } else {
+        remarks.value = currentRemarks || '';
+        remarks.placeholder = 'Optional remarks or revision instructions for the trainee...';
+    }
+
+    form.action = '{{ url("/supervisor/trainees/" . $trainee->id . "/academic-status") }}/' + type + '/' + itemId;
+
+    var m = document.getElementById('modalUpdateAcademicStatus');
     if (m) m.classList.add('is-open');
 }
-function openAddSynopsisModal() {
-    var m = document.getElementById('modalAddSynopsis');
-    if (m) m.classList.add('is-open');
-}
-function openAddDissertationModal() {
-    var m = document.getElementById('modalAddDissertation');
-    if (m) m.classList.add('is-open');
-}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var statusSel = document.getElementById('academicStatusSelect');
+    if (statusSel) {
+        statusSel.addEventListener('change', function() {
+            var remEl = document.getElementById('academicStatusRemarks');
+            if (this.value === 'Approved') {
+                remEl.placeholder = 'Optional remarks on approval (leave blank for none)...';
+            } else if (this.value === 'Discuss and Resubmit') {
+                remEl.placeholder = 'Provide instructions for trainee on what to revise...';
+            } else {
+                remEl.placeholder = 'Optional remarks (leave blank for none)...';
+            }
+        });
+    }
+});
+
 function closeModal(id) {
     var m = document.getElementById(id);
     if (m) m.classList.remove('is-open');

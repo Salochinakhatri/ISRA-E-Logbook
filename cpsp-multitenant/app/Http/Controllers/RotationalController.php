@@ -40,7 +40,7 @@ class RotationalController extends Controller
         if ($level !== '')  $query->where('level_id', $level);
         if ($reg !== '')    $query->where('hospt_reg_no', 'like', "%{$reg}%");
 
-        $entries = $query->latest('created_at')->get();
+        $entries = $query->orderByDesc('created_at')->orderByDesc('id')->get();
         $compMap = $this->competencyService->labelMap($program);
         $filters = compact('status', 'level', 'reg') + [
             'post_from' => $request->input('f_post_from', ''),
@@ -49,7 +49,7 @@ class RotationalController extends Controller
             'adm_to'    => $request->input('f_adm_to', ''),
         ];
 
-        $lastEntry      = RotationalEntry::where('user_id', $userId)->latest('created_at')->first();
+        $lastEntry      = RotationalEntry::where('user_id', $userId)->orderByDesc('created_at')->orderByDesc('id')->first();
         $lastEntryLabel = $lastEntry ? $lastEntry->created_at?->format('F j, Y') : null;
 
         return view('rotational.index', compact('entries', 'program', 'compMap', 'filters', 'lastEntryLabel'));
@@ -224,6 +224,160 @@ class RotationalController extends Controller
 
         return redirect()->route('rotational.index', $params)
             ->with('flash_ok', 'Rotational entry saved successfully.');
+    }
+
+    public function edit(Request $request, int $id): View|RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = RotationalEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('rotational.index')
+                ->with('flash_err', 'This entry cannot be edited because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program  = (string) ($request->input('program') ?? $entry->program ?? '');
+        $compTree = $this->competencyService->treeData($program);
+        $entryDefaults = [
+            'form_type'         => $entry->form_type,
+            'hospt_reg_no'      => $entry->hospt_reg_no,
+            'date_of_admission' => $entry->date_of_admission ? $entry->date_of_admission->format('d-m-Y') : '',
+            'pt_gender'         => $entry->pt_gender,
+            'pt_age'            => $entry->pt_age,
+            'pt_age_type'       => $entry->pt_age_type,
+            'pt_diagnosis'      => $entry->pt_diagnosis,
+            'under_sup_name'    => $entry->under_sup_name === '—' ? '' : $entry->under_sup_name,
+            'supervisor_id'     => $entry->supervisor_id,
+            'level_id'          => $entry->level_id,
+            'outcome_id'        => $entry->outcome_id,
+            'brief_desc'        => $entry->brief_desc,
+            'entry_for_prog_id' => $entry->entry_for_prog_id ?: $entry->program,
+            'rot_id'            => is_array($entry->rot_ids) ? $entry->rot_ids : (json_decode((string) $entry->rot_ids, true) ?: []),
+            'rot_detail_id'     => is_array($entry->rot_detail_ids) ? $entry->rot_detail_ids : (json_decode((string) $entry->rot_detail_ids, true) ?: []),
+            'alt_procedure'     => $entry->alt_procedure,
+            'std_post'          => $entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : ($entry->std_post ?: 'No'),
+        ];
+        $formOld    = array_merge($entryDefaults, session()->pull('form_old', []), session()->getOldInput());
+        $formErrors = session()->pull('form_errors', []);
+
+        $tenant            = $this->tenantManager->get();
+        $availablePrograms = $tenant ? $tenant->getAvailablePrograms() : ['MD' => 'MD', 'IMM' => 'IMM'];
+        $formTypes         = \App\Services\LookupService::formTypes();
+        $levels            = \App\Services\LookupService::levels();
+        $outcomes          = \App\Services\LookupService::outcomes();
+        $genders           = \App\Services\LookupService::genders();
+        $ageUnits          = \App\Services\LookupService::ageUnits();
+
+        $user = User::with(['profile', 'supervisor.profile'])->find($userId);
+
+        $assignedSupervisor = $user?->supervisor;
+        if (! $assignedSupervisor) {
+            $pivotSupId = DB::table('supervisor_trainee')->where('trainee_id', $userId)->value('supervisor_id');
+            if ($pivotSupId) {
+                $assignedSupervisor = User::with('profile')->find($pivotSupId);
+            }
+        }
+
+        $supervisors = User::where(function ($q) {
+            $q->whereHas('userType', fn($sub) => $sub->where('name', 'Supervisor'))
+              ->orWhereHas('roles', fn($sub) => $sub->where('slug', 'supervisor')->orWhere('name', 'Supervisor'));
+        })
+            ->with('profile')
+            ->orderBy('username')
+            ->get();
+
+        return view('rotational.create', compact(
+            'entry', 'program', 'compTree', 'formOld', 'formErrors',
+            'availablePrograms', 'formTypes', 'levels', 'outcomes', 'genders', 'ageUnits', 'tenant',
+            'assignedSupervisor', 'supervisors'
+        ));
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = RotationalEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('rotational.index')
+                ->with('flash_err', 'This entry cannot be updated because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program = (string) $request->input('program', $entry->program ?? '');
+
+        $validator = Validator::make($request->all(), [
+            'form_type'         => ['required', 'string'],
+            'hospt_reg_no'      => ['required', 'string', 'max:120'],
+            'date_of_admission' => ['required', 'string'],
+            'pt_gender'         => ['required', 'string'],
+            'pt_age'            => ['required', 'string'],
+            'pt_age_type'       => ['required', 'string'],
+            'pt_diagnosis'      => ['required', 'string', 'max:500'],
+            'under_sup_name'    => ['nullable', 'string', 'max:255'],
+            'supervisor_id'     => ['nullable', 'integer'],
+            'level_id'          => ['required', 'string'],
+            'outcome_id'        => ['required', 'string'],
+            'brief_desc'        => ['required', 'string'],
+            'entry_for_prog_id' => ['nullable', 'string', 'max:10'],
+            'std_post'          => ['required', 'in:Yes,No'],
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $validated = $validator->validated();
+        $user = User::with('supervisor')->find($userId);
+        $supervisorId = !empty($validated['supervisor_id']) ? (int) $validated['supervisor_id'] : $entry->supervisor_id;
+        $underSupName = trim((string) ($validated['under_sup_name'] ?? ''));
+
+        if (! $supervisorId) {
+            $supervisorId = $user?->supervisor_id ?: (int) (DB::table('supervisor_trainee')->where('trainee_id', $userId)->value('supervisor_id') ?: 0) ?: null;
+        }
+
+        if ($underSupName === '' && $supervisorId) {
+            $supUser = User::with('profile')->find($supervisorId);
+            $underSupName = $supUser?->profile?->full_name ?: $supUser?->username ?: '';
+        }
+
+        $newStatus = $request->input('std_post') === 'Yes'
+            ? 'Awaiting Approval'
+            : ($entry->entry_status === 'Discuss and Resubmit' ? 'Discuss and Resubmit' : 'Draft');
+
+        $entry->update([
+            'supervisor_id'     => $supervisorId,
+            'form_type'         => $request->input('form_type'),
+            'hospt_reg_no'      => $request->input('hospt_reg_no'),
+            'date_of_admission' => $this->parseBritishDate($request->input('date_of_admission', '')),
+            'pt_gender'         => $request->input('pt_gender'),
+            'pt_age'            => $request->input('pt_age'),
+            'pt_age_type'       => $request->input('pt_age_type'),
+            'pt_diagnosis'      => $request->input('pt_diagnosis'),
+            'under_sup_name'    => $underSupName ?: '—',
+            'level_id'          => $request->input('level_id'),
+            'outcome_id'        => $request->input('outcome_id'),
+            'brief_desc'        => $request->input('brief_desc'),
+            'entry_for_prog_id' => (string) $request->input('entry_for_prog_id', ''),
+            'rot_ids'           => $request->input('rot_id') ? array_map('intval', (array) $request->input('rot_id')) : null,
+            'rot_detail_ids'    => $request->input('rot_detail_id') ? array_map('intval', (array) $request->input('rot_detail_id')) : null,
+            'alt_procedure'     => (string) $request->input('alt_procedure', ''),
+            'std_post'          => $request->input('std_post') === 'Yes' ? 'Yes' : ($entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : 'No'),
+            'entry_status'      => $newStatus,
+        ]);
+
+        $params = $program !== '' ? ['program' => $program] : [];
+
+        return redirect()->route('rotational.index', $params)
+            ->with('flash_ok', 'Rotational entry updated successfully.');
+    }
+
+    private function isEntryEditable(?string $status): bool
+    {
+        $s = strtolower(trim((string) ($status ?? '')));
+
+        return $s === '' || $s === 'draft' || $s === 'discuss and resubmit';
     }
 
     private function parseBritishDate(?string $s): ?string

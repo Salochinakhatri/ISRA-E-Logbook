@@ -119,7 +119,7 @@ class SupervisorApprovalController extends Controller
                 ->tap($applySupervisorScope);
             $this->applyFilters($trainings, 'training', $traineeId, $statusFilter, $filters);
             $items = $items->concat(
-                $trainings->latest('created_at')->get()->map(fn($row) => $this->normalizeEntry('training', $row))
+                $trainings->orderByDesc('created_at')->orderByDesc('id')->get()->map(fn($row) => $this->normalizeEntry('training', $row))
             );
         }
 
@@ -129,7 +129,7 @@ class SupervisorApprovalController extends Controller
                 ->tap($applySupervisorScope);
             $this->applyFilters($rotationals, 'rotational', $traineeId, $statusFilter, $filters);
             $items = $items->concat(
-                $rotationals->latest('created_at')->get()->map(fn($row) => $this->normalizeEntry('rotational', $row))
+                $rotationals->orderByDesc('created_at')->orderByDesc('id')->get()->map(fn($row) => $this->normalizeEntry('rotational', $row))
             );
         }
 
@@ -139,7 +139,7 @@ class SupervisorApprovalController extends Controller
                 ->tap($applySupervisorScope);
             $this->applyFilters($journals, 'journal', $traineeId, $statusFilter, $filters);
             $items = $items->concat(
-                $journals->latest('created_at')->get()->map(fn($row) => $this->normalizeEntry('journal', $row))
+                $journals->orderByDesc('created_at')->orderByDesc('id')->get()->map(fn($row) => $this->normalizeEntry('journal', $row))
             );
         }
 
@@ -149,7 +149,7 @@ class SupervisorApprovalController extends Controller
                 ->tap($applySupervisorScope);
             $this->applyFilters($presenteds, 'presented', $traineeId, $statusFilter, $filters);
             $items = $items->concat(
-                $presenteds->latest('created_at')->get()->map(fn($row) => $this->normalizeEntry('presented', $row))
+                $presenteds->orderByDesc('created_at')->orderByDesc('id')->get()->map(fn($row) => $this->normalizeEntry('presented', $row))
             );
         }
 
@@ -159,12 +159,15 @@ class SupervisorApprovalController extends Controller
                 ->tap($applySupervisorScope);
             $this->applyFilters($publisheds, 'published', $traineeId, $statusFilter, $filters);
             $items = $items->concat(
-                $publisheds->latest('created_at')->get()->map(fn($row) => $this->normalizeEntry('published', $row))
+                $publisheds->orderByDesc('created_at')->orderByDesc('id')->get()->map(fn($row) => $this->normalizeEntry('published', $row))
             );
         }
 
-        // Sort items descending by created_at
-        $items = $items->sortByDesc('created_at')->values();
+        // Sort items descending by created_at and id so the most recent entry is always on top
+        $items = $items->sortByDesc(fn($item) => [
+            $item['created_at'] ? $item['created_at']->getTimestamp() : 0,
+            (int) ($item['id'] ?? 0),
+        ])->values();
 
         // Calculate counts for quick filter tabs
         $statusCounts = [
@@ -334,8 +337,19 @@ class SupervisorApprovalController extends Controller
             abort(403, 'Unauthorized. You can only approve entries submitted by your assigned trainees.');
         }
 
+        // Approved entries are locked: status can no longer be changed
+        if (($entry->entry_status ?? '') === 'Approved') {
+            $lockMsg = 'This entry has already been approved and is locked. Its status can no longer be changed.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $lockMsg, 'entry_status' => 'Approved'], 422);
+            }
+            return redirect()->back()->with('flash_err', $lockMsg);
+        }
+
         $newStatus = $validated['status'];
-        $remarks   = $validated['supervisor_remarks'] ?? $entry->supervisor_remarks ?? '';
+        $remarks   = !empty(trim((string)($validated['supervisor_remarks'] ?? '')))
+            ? trim((string)$validated['supervisor_remarks'])
+            : null;
 
         $updateData = [
             'entry_status'       => $newStatus,
@@ -378,6 +392,7 @@ class SupervisorApprovalController extends Controller
         $status  = $validated['bulk_status'];
         $remarks = $validated['bulk_remarks'] ?? null;
         $count   = 0;
+        $skipped = 0;
 
         foreach ($validated['selected_entries'] as $itemKey) {
             $parts = explode(':', (string) $itemKey);
@@ -397,9 +412,17 @@ class SupervisorApprovalController extends Controller
                 continue;
             }
 
+            // Approved entries are locked
+            if (($entry->entry_status ?? '') === 'Approved') {
+                $skipped++;
+                continue;
+            }
+
             $updateData = ['entry_status' => $status];
-            if ($remarks !== null && $remarks !== '') {
-                $updateData['supervisor_remarks'] = $remarks;
+            if ($remarks !== null && trim((string)$remarks) !== '') {
+                $updateData['supervisor_remarks'] = trim((string)$remarks);
+            } else {
+                $updateData['supervisor_remarks'] = null;
             }
 
             if ($status === 'Approved') {
@@ -414,7 +437,12 @@ class SupervisorApprovalController extends Controller
             $count++;
         }
 
-        return redirect()->back()->with('flash_ok', "{$count} entries successfully updated to '{$status}'.");
+        $msg = "{$count} entries successfully updated to '{$status}'.";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} already approved " . ($skipped === 1 ? 'entry was' : 'entries were') . " skipped (approved entries are locked).";
+        }
+
+        return redirect()->back()->with('flash_ok', $msg);
     }
 
     /**
@@ -700,9 +728,9 @@ class SupervisorApprovalController extends Controller
 
         $trainee = User::with(['profile'])->findOrFail($id);
 
-        $workshops = TraineeWorkshop::where('user_id', $trainee->id)->orderBy('id', 'asc')->get();
-        $synopses = TraineeSynopsis::where('user_id', $trainee->id)->orderBy('id', 'asc')->get();
-        $dissertations = TraineeDissertation::where('user_id', $trainee->id)->orderBy('id', 'asc')->get();
+        $workshops = TraineeWorkshop::where('user_id', $trainee->id)->orderByDesc('created_at')->orderByDesc('id')->get();
+        $synopses = TraineeSynopsis::where('user_id', $trainee->id)->orderByDesc('created_at')->orderByDesc('id')->get();
+        $dissertations = TraineeDissertation::where('user_id', $trainee->id)->orderByDesc('created_at')->orderByDesc('id')->get();
 
         if ($request->ajax() || $request->wantsJson() || $request->query('format') === 'json') {
             return response()->json([
@@ -719,21 +747,26 @@ class SupervisorApprovalController extends Controller
                     'id'            => $w->id,
                     'workshop_name' => $w->workshop_name,
                     'time_duration' => $w->time_duration ?: 'N/A',
-                    'status'        => $w->status ?: 'Completed',
+                    'status'        => $w->status ?: 'Awaiting Approval',
+                    'status_date'   => $w->status_date ? $w->status_date->format('d/m/Y') : ($w->created_at ? $w->created_at->format('d/m/Y') : '—'),
+                    'remarks'       => $w->remarks ?? '',
                 ]),
                 'synopses' => $synopses->map(fn($s, $idx) => [
                     'hash'          => $idx + 1,
                     'id'            => $s->id,
                     'synopsis_name' => $s->synopsis_name,
-                    'status'        => $s->status ?: 'Approved',
+                    'status'        => $s->status ?: 'Awaiting Approval',
                     'status_date'   => $s->status_date ? $s->status_date->format('d/m/Y') : ($s->created_at ? $s->created_at->format('d/m/Y') : '—'),
+                    'remarks'       => $s->remarks ?? '',
                 ]),
                 'dissertations' => $dissertations->map(fn($d, $idx) => [
-                    'hash'             => $idx + 1,
-                    'id'               => $d->id,
-                    'application_date' => $d->application_date ? $d->application_date->format('d/m/Y') : ($d->created_at ? $d->created_at->format('d/m/Y') : '—'),
-                    'status'           => $d->status ?: 'Submitted',
-                    'status_date'      => $d->status_date ? $d->status_date->format('d/m/Y') : '—',
+                    'hash'               => $idx + 1,
+                    'id'                 => $d->id,
+                    'dissertation_title' => $d->dissertation_title ?? '',
+                    'application_date'   => $d->application_date ? $d->application_date->format('d/m/Y') : ($d->created_at ? $d->created_at->format('d/m/Y') : '—'),
+                    'status'             => $d->status ?: 'Awaiting Approval',
+                    'status_date'        => $d->status_date ? $d->status_date->format('d/m/Y') : '—',
+                    'remarks'            => $d->remarks ?? '',
                 ]),
             ]);
         }

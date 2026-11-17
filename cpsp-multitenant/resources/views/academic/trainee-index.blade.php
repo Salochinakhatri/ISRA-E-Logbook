@@ -130,6 +130,12 @@
     border: 1px solid #fde68a;
 }
 
+.ac-badge-discuss {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
 .ac-modal-overlay {
     display: none;
     position: fixed;
@@ -219,6 +225,11 @@
             <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
         </div>
     @endif
+    @if(session('error'))
+        <div style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
+        </div>
+    @endif
 
     {{-- 1. Workshops Details --}}
     <div class="ac-section-card">
@@ -236,29 +247,53 @@
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
                         <th>Workshop Name</th>
-                        <th style="width: 200px;">Time Duration</th>
+                        <th style="width: 180px;">Time Duration</th>
                         <th style="width: 180px;">Status</th>
+                        <th style="width: 140px; text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($workshops as $index => $w)
                     <tr>
                         <td style="text-align: center; font-weight: 700; color: #64748b;">{{ $index + 1 }}</td>
-                        <td><strong>{{ $w->workshop_name }}</strong></td>
+                        <td>
+                            <strong>{{ $w->workshop_name }}</strong>
+                            @if(!empty($w->remarks))
+                                @php
+                                    $isWApp = str_contains(strtolower((string)$w->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isWApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isWApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isWApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isWApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isWApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $w->remarks }}
+                                </div>
+                            @endif
+                        </td>
                         <td><i class="fa-regular fa-clock" style="color: #64748b; margin-right: 4px;"></i> {{ $w->time_duration }}</td>
                         <td>
                             @php
                                 $wSt = strtolower((string)$w->status);
-                                $wBadge = str_contains($wSt, 'completed') ? 'ac-badge-completed' : 'ac-badge-progress';
+                                $wBadge = (str_contains($wSt, 'approved') || str_contains($wSt, 'completed')) ? 'ac-badge-completed' : (str_contains($wSt, 'discuss') ? 'ac-badge-discuss' : 'ac-badge-progress');
+                                $wIcon = (str_contains($wSt, 'approved') || str_contains($wSt, 'completed')) ? 'fa-circle-check' : (str_contains($wSt, 'discuss') ? 'fa-comments' : 'fa-clock');
                             @endphp
                             <span class="ac-status-badge {{ $wBadge }}">
-                                <i class="fa-solid fa-circle-check"></i> {{ $w->status }}
+                                <i class="fa-solid {{ $wIcon }}"></i> {{ $w->status ?: 'Registered' }}
                             </span>
+                        </td>
+                        <td style="text-align: center;">
+                            @if(str_contains($wSt, 'discuss') || str_contains($wSt, 'resubmit'))
+                                <button type="button" class="ac-btn-add" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; font-size: 12px;"
+                                        onclick="openEditWorkshopModal({{ $w->id }}, @js($w->workshop_name), @js($w->time_duration), @js($w->status), @js($w->status_date ? $w->status_date->format('Y-m-d') : ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit &amp; Resubmit
+                                </button>
+                            @elseif(str_contains($wSt, 'approved'))
+                                <span style="font-size: 12px; color: #166534; font-weight: 600;"><i class="fa-solid fa-lock"></i> Approved</span>
+                            @else
+                                <span style="font-size: 12px; color: #64748b; font-weight: 600;" title="Editable only when supervisor sets to Discuss and Resubmit"><i class="fa-solid fa-clock"></i> Submitted</span>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
+                        <td colspan="5" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
                             No workshop records added yet. Click "+ Add Workshop" above to add your workshops.
                         </td>
                     </tr>
@@ -285,31 +320,55 @@
                         <th style="width: 50px; text-align: center;">#</th>
                         <th>Synopsis Name</th>
                         <th style="width: 180px;">Status</th>
-                        <th style="width: 180px;">Status Date</th>
+                        <th style="width: 150px;">Status Date</th>
+                        <th style="width: 140px; text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($synopses as $index => $s)
                     <tr>
                         <td style="text-align: center; font-weight: 700; color: #64748b;">{{ $index + 1 }}</td>
-                        <td><strong>{{ $s->synopsis_name }}</strong></td>
+                        <td>
+                            <strong>{{ $s->synopsis_name }}</strong>
+                            @if(!empty($s->remarks))
+                                @php
+                                    $isSApp = str_contains(strtolower((string)$s->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isSApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isSApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isSApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isSApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isSApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $s->remarks }}
+                                </div>
+                            @endif
+                        </td>
                         <td>
                             @php
                                 $sSt = strtolower((string)$s->status);
-                                $sBadge = str_contains($sSt, 'approved') ? 'ac-badge-completed' : 'ac-badge-progress';
+                                $sBadge = str_contains($sSt, 'approved') ? 'ac-badge-completed' : (str_contains($sSt, 'discuss') ? 'ac-badge-discuss' : 'ac-badge-progress');
+                                $sIcon = str_contains($sSt, 'approved') ? 'fa-circle-check' : (str_contains($sSt, 'discuss') ? 'fa-comments' : 'fa-clock');
                             @endphp
                             <span class="ac-status-badge {{ $sBadge }}">
-                                <i class="fa-solid fa-stamp"></i> {{ $s->status }}
+                                <i class="fa-solid {{ $sIcon }}"></i> {{ $s->status ?: 'Submitted to RTMC' }}
                             </span>
                         </td>
                         <td>
                             <i class="fa-regular fa-calendar-days" style="color: #64748b; margin-right: 4px;"></i>
                             {{ $s->status_date ? $s->status_date->format('d/m/Y') : ($s->created_at ? $s->created_at->format('d/m/Y') : '—') }}
                         </td>
+                        <td style="text-align: center;">
+                            @if(str_contains($sSt, 'discuss') || str_contains($sSt, 'resubmit'))
+                                <button type="button" class="ac-btn-add" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; font-size: 12px;"
+                                        onclick="openEditSynopsisModal({{ $s->id }}, @js($s->synopsis_name), @js($s->status), @js($s->status_date ? $s->status_date->format('Y-m-d') : ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit &amp; Resubmit
+                                </button>
+                            @elseif(str_contains($sSt, 'approved'))
+                                <span style="font-size: 12px; color: #166534; font-weight: 600;"><i class="fa-solid fa-lock"></i> Approved</span>
+                            @else
+                                <span style="font-size: 12px; color: #64748b; font-weight: 600;" title="Editable only when supervisor sets to Discuss and Resubmit"><i class="fa-solid fa-clock"></i> Submitted</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
+                        <td colspan="5" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
                             No synopsis records submitted yet. Click "+ Submit Synopsis" to enter your topic.
                         </td>
                     </tr>
@@ -334,9 +393,10 @@
                 <thead>
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
-                        <th style="width: 220px;">Application Date</th>
+                        <th>Application Date &amp; Title</th>
                         <th style="width: 180px;">Status</th>
-                        <th style="width: 180px;">Status Date</th>
+                        <th style="width: 150px;">Status Date</th>
+                        <th style="width: 140px; text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -351,24 +411,45 @@
                             @if($d->dissertation_title)
                                 <div style="font-size: 12px; color: #64748b; margin-top: 2px;">{{ $d->dissertation_title }}</div>
                             @endif
+                            @if(!empty($d->remarks))
+                                @php
+                                    $isDApp = str_contains(strtolower((string)$d->status), 'approved');
+                                @endphp
+                                <div style="margin-top: 5px; padding: 6px 12px; background: {{ $isDApp ? '#f0fdf4' : '#fffbeb' }}; border: 1px solid {{ $isDApp ? '#bbf7d0' : '#fde68a' }}; border-left: 3px solid {{ $isDApp ? '#16a34a' : '#d97706' }}; border-radius: 5px; font-size: 12px; color: {{ $isDApp ? '#166534' : '#78350f' }};">
+                                    <strong style="color: {{ $isDApp ? '#15803d' : '#b45309' }};"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $d->remarks }}
+                                </div>
+                            @endif
                         </td>
                         <td>
                             @php
                                 $dSt = strtolower((string)$d->status);
-                                $dBadge = str_contains($dSt, 'approved') ? 'ac-badge-completed' : 'ac-badge-progress';
+                                $dBadge = str_contains($dSt, 'approved') ? 'ac-badge-completed' : (str_contains($dSt, 'discuss') ? 'ac-badge-discuss' : 'ac-badge-progress');
+                                $dIcon = str_contains($dSt, 'approved') ? 'fa-circle-check' : (str_contains($dSt, 'discuss') ? 'fa-comments' : 'fa-clock');
                             @endphp
                             <span class="ac-status-badge {{ $dBadge }}">
-                                <i class="fa-solid fa-file-circle-check"></i> {{ $d->status }}
+                                <i class="fa-solid {{ $dIcon }}"></i> {{ $d->status ?: 'Submitted' }}
                             </span>
                         </td>
                         <td>
                             <i class="fa-regular fa-calendar-days" style="color: #64748b; margin-right: 4px;"></i>
                             {{ $d->status_date ? $d->status_date->format('d/m/Y') : '—' }}
                         </td>
+                        <td style="text-align: center;">
+                            @if(str_contains($dSt, 'discuss') || str_contains($dSt, 'resubmit'))
+                                <button type="button" class="ac-btn-add" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; font-size: 12px;"
+                                        onclick="openEditDissertationModal({{ $d->id }}, @js($d->application_date ? $d->application_date->format('Y-m-d') : date('Y-m-d')), @js($d->dissertation_title ?? ''), @js($d->status), @js($d->status_date ? $d->status_date->format('Y-m-d') : ''))">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit &amp; Resubmit
+                                </button>
+                            @elseif(str_contains($dSt, 'approved'))
+                                <span style="font-size: 12px; color: #166534; font-weight: 600;"><i class="fa-solid fa-lock"></i> Approved</span>
+                            @else
+                                <span style="font-size: 12px; color: #64748b; font-weight: 600;" title="Editable only when supervisor sets to Discuss and Resubmit"><i class="fa-solid fa-clock"></i> Submitted</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
+                        <td colspan="5" style="text-align: center; padding: 24px; color: #64748b; font-style: italic;">
                             No dissertation application recorded yet. Click "+ Submit Dissertation" above.
                         </td>
                     </tr>
@@ -379,27 +460,28 @@
     </div>
 </div>
 
-{{-- Add Workshop Modal --}}
+{{-- Add / Edit Workshop Modal --}}
 <div class="ac-modal-overlay" id="modalAddWorkshop">
     <div class="ac-modal-box">
         <div class="ac-modal-box-header">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-chalkboard-user"></i> Add Workshop</h3>
+            <h3 id="modalWorkshopHeading" style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-chalkboard-user"></i> Add Workshop</h3>
             <button type="button" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;" onclick="closeModal('modalAddWorkshop')">&times;</button>
         </div>
         <form method="POST" action="{{ route('academic.workshop.store', ['id' => $user->id]) }}">
             @csrf
+            <input type="hidden" name="id" id="workshopFormId" value="">
             <div class="ac-modal-box-body">
                 <div class="ac-form-group">
                     <label>Workshop Name *</label>
-                    <input type="text" name="workshop_name" class="ac-form-control" required placeholder="e.g. Basic Surgical Skills (BSS)">
+                    <input type="text" name="workshop_name" id="workshopFormName" class="ac-form-control" required placeholder="e.g. Basic Surgical Skills (BSS)">
                 </div>
                 <div class="ac-form-group">
                     <label>Time Duration *</label>
-                    <input type="text" name="time_duration" class="ac-form-control" required placeholder="e.g. 3 Days, 4 Days, 2 Weeks">
+                    <input type="text" name="time_duration" id="workshopFormDuration" class="ac-form-control" required placeholder="e.g. 3 Days, 4 Days, 2 Weeks">
                 </div>
                 <div class="ac-form-group">
                     <label>Status *</label>
-                    <select name="status" class="ac-form-control" required>
+                    <select name="status" id="workshopFormStatus" class="ac-form-control" required>
                         <option value="Completed">Completed</option>
                         <option value="In Progress">In Progress</option>
                         <option value="Registered">Registered</option>
@@ -407,85 +489,87 @@
                 </div>
                 <div class="ac-form-group">
                     <label>Status Date</label>
-                    <input type="date" name="status_date" class="ac-form-control" value="{{ date('Y-m-d') }}">
+                    <input type="date" name="status_date" id="workshopFormDate" class="ac-form-control" value="{{ date('Y-m-d') }}">
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                     <button type="button" class="ac-form-control" style="width: auto; background: #fff; cursor: pointer;" onclick="closeModal('modalAddWorkshop')">Cancel</button>
-                    <button type="submit" class="ac-btn-add" style="border: none;">Save Workshop</button>
+                    <button type="submit" class="ac-btn-add" style="border: none;" id="workshopSubmitBtn">Save Workshop</button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-{{-- Add Synopsis Modal --}}
+{{-- Add / Edit Synopsis Modal --}}
 <div class="ac-modal-overlay" id="modalAddSynopsis">
     <div class="ac-modal-box">
         <div class="ac-modal-box-header">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-file-waveform"></i> Submit Synopsis</h3>
+            <h3 id="modalSynopsisHeading" style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-file-waveform"></i> Submit Synopsis</h3>
             <button type="button" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;" onclick="closeModal('modalAddSynopsis')">&times;</button>
         </div>
         <form method="POST" action="{{ route('academic.synopsis.store', ['id' => $user->id]) }}">
             @csrf
+            <input type="hidden" name="id" id="synopsisFormId" value="">
             <div class="ac-modal-box-body">
                 <div class="ac-form-group">
                     <label>Synopsis Title / Name *</label>
-                    <textarea name="synopsis_name" class="ac-form-control" rows="3" required placeholder="Enter full approved or submitted synopsis title..."></textarea>
+                    <textarea name="synopsis_name" id="synopsisFormName" class="ac-form-control" rows="3" required placeholder="Enter full approved or submitted synopsis title..."></textarea>
                 </div>
                 <div class="ac-form-group">
                     <label>Status *</label>
-                    <select name="status" class="ac-form-control" required>
-                        <option value="Submitted">Submitted to RTMC</option>
+                    <select name="status" id="synopsisFormStatus" class="ac-form-control" required>
+                        <option value="Submitted to RTMC">Submitted to RTMC</option>
                         <option value="Under Review">Under Review</option>
                         <option value="Approved">Approved</option>
                     </select>
                 </div>
                 <div class="ac-form-group">
                     <label>Status Date</label>
-                    <input type="date" name="status_date" class="ac-form-control" value="{{ date('Y-m-d') }}">
+                    <input type="date" name="status_date" id="synopsisFormDate" class="ac-form-control" value="{{ date('Y-m-d') }}">
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                     <button type="button" class="ac-form-control" style="width: auto; background: #fff; cursor: pointer;" onclick="closeModal('modalAddSynopsis')">Cancel</button>
-                    <button type="submit" class="ac-btn-add" style="border: none;">Save Synopsis</button>
+                    <button type="submit" class="ac-btn-add" style="border: none;" id="synopsisSubmitBtn">Save Synopsis</button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-{{-- Add Dissertation Modal --}}
+{{-- Add / Edit Dissertation Modal --}}
 <div class="ac-modal-overlay" id="modalAddDissertation">
     <div class="ac-modal-box">
         <div class="ac-modal-box-header">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-book-open-reader"></i> Submit Dissertation</h3>
+            <h3 id="modalDissertationHeading" style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-book-open-reader"></i> Submit Dissertation</h3>
             <button type="button" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;" onclick="closeModal('modalAddDissertation')">&times;</button>
         </div>
         <form method="POST" action="{{ route('academic.dissertation.store', ['id' => $user->id]) }}">
             @csrf
+            <input type="hidden" name="id" id="dissertationFormId" value="">
             <div class="ac-modal-box-body">
                 <div class="ac-form-group">
                     <label>Application Date *</label>
-                    <input type="date" name="application_date" class="ac-form-control" required value="{{ date('Y-m-d') }}">
+                    <input type="date" name="application_date" id="dissertationFormDate" class="ac-form-control" required value="{{ date('Y-m-d') }}">
                 </div>
                 <div class="ac-form-group">
                     <label>Dissertation Title</label>
-                    <textarea name="dissertation_title" class="ac-form-control" rows="2" placeholder="Title of dissertation manuscript..."></textarea>
+                    <textarea name="dissertation_title" id="dissertationFormTitle" class="ac-form-control" rows="2" placeholder="Title of dissertation manuscript..."></textarea>
                 </div>
                 <div class="ac-form-group">
                     <label>Status *</label>
-                    <select name="status" class="ac-form-control" required>
+                    <select name="status" id="dissertationFormStatus" class="ac-form-control" required>
                         <option value="Submitted">Submitted</option>
                         <option value="Under Evaluation">Under Evaluation</option>
-                        <option value="Approved">Approved / Accepted</option>
+                        <option value="Approved / Accepted">Approved / Accepted</option>
                     </select>
                 </div>
                 <div class="ac-form-group">
                     <label>Status Date</label>
-                    <input type="date" name="status_date" class="ac-form-control" value="{{ date('Y-m-d') }}">
+                    <input type="date" name="status_date" id="dissertationFormStatusDate" class="ac-form-control" value="{{ date('Y-m-d') }}">
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
                     <button type="button" class="ac-form-control" style="width: auto; background: #fff; cursor: pointer;" onclick="closeModal('modalAddDissertation')">Cancel</button>
-                    <button type="submit" class="ac-btn-add" style="border: none;">Save Dissertation</button>
+                    <button type="submit" class="ac-btn-add" style="border: none;" id="dissertationSubmitBtn">Save Dissertation</button>
                 </div>
             </div>
         </form>
@@ -495,12 +579,94 @@
 @push('scripts')
 <script>
 function openAddWorkshopModal() {
+    document.getElementById('workshopFormId').value = '';
+    document.getElementById('workshopFormName').value = '';
+    document.getElementById('workshopFormDuration').value = '';
+    document.getElementById('workshopFormStatus').value = 'Completed';
+    document.getElementById('workshopFormDate').value = '{{ date('Y-m-d') }}';
+    document.getElementById('modalWorkshopHeading').innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Add Workshop';
+    document.getElementById('workshopSubmitBtn').textContent = 'Save Workshop';
+    document.getElementById('modalAddWorkshop').classList.add('is-active');
+}
+function openEditWorkshopModal(id, name, duration, status, date) {
+    document.getElementById('workshopFormId').value = id;
+    document.getElementById('workshopFormName').value = name || '';
+    document.getElementById('workshopFormDuration').value = duration || '';
+    var statusSelect = document.getElementById('workshopFormStatus');
+    var isDiscuss = (status || '').toLowerCase().indexOf('discuss') !== -1;
+    if (status) {
+        var optExists = Array.from(statusSelect.options).some(function(o) { return o.value === status; });
+        statusSelect.value = optExists ? status : 'Completed';
+    }
+    if (date) {
+        document.getElementById('workshopFormDate').value = date;
+    }
+    document.getElementById('modalWorkshopHeading').innerHTML = isDiscuss
+        ? '<i class="fa-solid fa-pen-to-square"></i> Edit & Resubmit Workshop'
+        : '<i class="fa-solid fa-pen-to-square"></i> Edit Workshop';
+    document.getElementById('workshopSubmitBtn').textContent = isDiscuss
+        ? 'Update & Resubmit'
+        : 'Update Workshop';
     document.getElementById('modalAddWorkshop').classList.add('is-active');
 }
 function openAddSynopsisModal() {
+    document.getElementById('synopsisFormId').value = '';
+    document.getElementById('synopsisFormName').value = '';
+    document.getElementById('synopsisFormStatus').value = 'Submitted to RTMC';
+    document.getElementById('synopsisFormDate').value = '{{ date('Y-m-d') }}';
+    document.getElementById('modalSynopsisHeading').innerHTML = '<i class="fa-solid fa-file-waveform"></i> Submit Synopsis';
+    document.getElementById('synopsisSubmitBtn').textContent = 'Save Synopsis';
+    document.getElementById('modalAddSynopsis').classList.add('is-active');
+}
+function openEditSynopsisModal(id, name, status, date) {
+    document.getElementById('synopsisFormId').value = id;
+    document.getElementById('synopsisFormName').value = name || '';
+    var statusSelect = document.getElementById('synopsisFormStatus');
+    var isDiscuss = (status || '').toLowerCase().indexOf('discuss') !== -1;
+    if (status) {
+        var optExists = Array.from(statusSelect.options).some(function(o) { return o.value === status; });
+        statusSelect.value = optExists ? status : 'Submitted to RTMC';
+    }
+    if (date) {
+        document.getElementById('synopsisFormDate').value = date;
+    }
+    document.getElementById('modalSynopsisHeading').innerHTML = isDiscuss
+        ? '<i class="fa-solid fa-pen-to-square"></i> Edit & Resubmit Synopsis'
+        : '<i class="fa-solid fa-pen-to-square"></i> Edit Synopsis';
+    document.getElementById('synopsisSubmitBtn').textContent = isDiscuss
+        ? 'Update & Resubmit'
+        : 'Update Synopsis';
     document.getElementById('modalAddSynopsis').classList.add('is-active');
 }
 function openAddDissertationModal() {
+    document.getElementById('dissertationFormId').value = '';
+    document.getElementById('dissertationFormDate').value = '{{ date('Y-m-d') }}';
+    document.getElementById('dissertationFormTitle').value = '';
+    document.getElementById('dissertationFormStatus').value = 'Submitted';
+    document.getElementById('dissertationFormStatusDate').value = '{{ date('Y-m-d') }}';
+    document.getElementById('modalDissertationHeading').innerHTML = '<i class="fa-solid fa-book-open-reader"></i> Submit Dissertation';
+    document.getElementById('dissertationSubmitBtn').textContent = 'Save Dissertation';
+    document.getElementById('modalAddDissertation').classList.add('is-active');
+}
+function openEditDissertationModal(id, appDate, title, status, date) {
+    document.getElementById('dissertationFormId').value = id;
+    document.getElementById('dissertationFormDate').value = appDate || '{{ date('Y-m-d') }}';
+    document.getElementById('dissertationFormTitle').value = title || '';
+    var statusSelect = document.getElementById('dissertationFormStatus');
+    var isDiscuss = (status || '').toLowerCase().indexOf('discuss') !== -1;
+    if (status) {
+        var optExists = Array.from(statusSelect.options).some(function(o) { return o.value === status; });
+        statusSelect.value = optExists ? status : 'Submitted';
+    }
+    if (date) {
+        document.getElementById('dissertationFormStatusDate').value = date;
+    }
+    document.getElementById('modalDissertationHeading').innerHTML = isDiscuss
+        ? '<i class="fa-solid fa-pen-to-square"></i> Edit & Resubmit Dissertation'
+        : '<i class="fa-solid fa-pen-to-square"></i> Edit Dissertation';
+    document.getElementById('dissertationSubmitBtn').textContent = isDiscuss
+        ? 'Update & Resubmit'
+        : 'Update Dissertation';
     document.getElementById('modalAddDissertation').classList.add('is-active');
 }
 function closeModal(id) {

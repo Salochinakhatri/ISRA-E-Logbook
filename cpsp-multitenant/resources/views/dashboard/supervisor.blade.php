@@ -1254,8 +1254,8 @@
                     </div>
                 </div>
                 <div>
-                    <a href="#" id="armFullPageBtn" class="btn-arm-primary" target="_blank" title="Manage, Add and Edit Academic Entries">
-                        <i class="fa-solid fa-pen-to-square"></i> Manage / Add Entries
+                    <a href="#" id="armFullPageBtn" class="btn-arm-primary" target="_blank" title="Review and set approval status">
+                        <i class="fa-solid fa-clipboard-check"></i> Review &amp; Set Status
                     </a>
                 </div>
             </div>
@@ -1446,16 +1446,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 wCount.textContent = workshops.length;
 
                 if (workshops.length === 0) {
-                    wTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No workshop records found for this trainee. <a href="' + fullPageUrl + '" target="_blank" style="color:#0b6040;font-weight:600;margin-left:8px;text-decoration:underline;"><i class="fa-solid fa-plus"></i> Add Workshop</a></td></tr>';
+                    wTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No workshop records submitted by this trainee yet.</td></tr>';
                 } else {
                     workshops.forEach(function (w) {
-                        var st = (w.status || 'Completed').toLowerCase();
-                        var badgeCls = (st.includes('completed') || st.includes('passed')) ? 'arm-status-completed' : (st.includes('progress') ? 'arm-status-in-progress' : 'arm-status-pending');
+                        var st = (w.status || 'Awaiting Approval').toLowerCase();
+                        var badgeCls = (st.includes('approved') || st.includes('completed')) ? 'arm-status-completed' : (st.includes('discuss') || st.includes('resubmit') ? 'arm-status-under-review' : 'arm-status-pending');
                         var tr = document.createElement('tr');
+                        var isWApp = st.includes('approved');
+                        var remWColor = isWApp ? '#166534' : '#78350f';
+                        var remWBg = isWApp ? '#f0fdf4' : '#fffbeb';
+                        var remWBorder = isWApp ? '#bbf7d0' : '#fde68a';
+                        var remarksHtml = (w.remarks && w.remarks.trim()) ? '<div style="font-size:11.5px;color:' + remWColor + ';background:' + remWBg + ';border:1px solid ' + remWBorder + ';border-radius:4px;padding:3px 8px;margin-top:4px;"><i class="fa-solid fa-comment-dots"></i> <strong>Supervisor Remarks:</strong> ' + escapeHtml(w.remarks) + '</div>' : '';
                         tr.innerHTML = '<td class="arm-col-hash">' + w.hash + '</td>' +
-                            '<td><strong>' + escapeHtml(w.workshop_name) + '</strong></td>' +
+                            '<td><strong>' + escapeHtml(w.workshop_name) + '</strong>' + remarksHtml + '</td>' +
                             '<td><i class="fa-regular fa-clock" style="color:#64748b;margin-right:4px;"></i> ' + escapeHtml(w.time_duration) + '</td>' +
-                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-circle-check"></i> ' + escapeHtml(w.status) + '</span></td>';
+                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-circle-check"></i> ' + escapeHtml(w.status || 'Awaiting Approval') + '</span></td>';
                         wTbody.appendChild(tr);
                     });
                 }
@@ -1468,15 +1473,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 sCount.textContent = synopses.length;
 
                 if (synopses.length === 0) {
-                    sTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No synopsis records found for this trainee. <a href="' + fullPageUrl + '" target="_blank" style="color:#0b6040;font-weight:600;margin-left:8px;text-decoration:underline;"><i class="fa-solid fa-plus"></i> Add Synopsis</a></td></tr>';
+                    sTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No synopsis records submitted by this trainee yet.</td></tr>';
                 } else {
                     synopses.forEach(function (s) {
-                        var st = (s.status || 'Approved').toLowerCase();
-                        var badgeCls = (st.includes('approved') || st.includes('accepted')) ? 'arm-status-approved' : 'arm-status-under-review';
+                        var st = (s.status || 'Awaiting Approval').toLowerCase();
+                        var badgeCls = (st.includes('approved') || st.includes('accepted')) ? 'arm-status-approved' : (st.includes('discuss') || st.includes('resubmit') ? 'arm-status-under-review' : 'arm-status-pending');
                         var tr = document.createElement('tr');
+                        var isSApp = st.includes('approved') || st.includes('accepted');
+                        var remSColor = isSApp ? '#166534' : '#78350f';
+                        var remSBg = isSApp ? '#f0fdf4' : '#fffbeb';
+                        var remSBorder = isSApp ? '#bbf7d0' : '#fde68a';
+                        var remarksHtml = (s.remarks && s.remarks.trim()) ? '<div style="font-size:11.5px;color:' + remSColor + ';background:' + remSBg + ';border:1px solid ' + remSBorder + ';border-radius:4px;padding:3px 8px;margin-top:4px;"><i class="fa-solid fa-comment-dots"></i> <strong>Supervisor Remarks:</strong> ' + escapeHtml(s.remarks) + '</div>' : '';
                         tr.innerHTML = '<td class="arm-col-hash">' + s.hash + '</td>' +
-                            '<td><strong>' + escapeHtml(s.synopsis_name) + '</strong></td>' +
-                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-stamp"></i> ' + escapeHtml(s.status) + '</span></td>' +
+                            '<td><strong>' + escapeHtml(s.synopsis_name) + '</strong>' + remarksHtml + '</td>' +
+                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-stamp"></i> ' + escapeHtml(s.status || 'Awaiting Approval') + '</span></td>' +
                             '<td><i class="fa-regular fa-calendar-days" style="color:#64748b;margin-right:4px;"></i> ' + escapeHtml(s.status_date) + '</td>';
                         sTbody.appendChild(tr);
                     });
@@ -1490,16 +1500,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 dCount.textContent = dissertations.length;
 
                 if (dissertations.length === 0) {
-                    dTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No dissertation records found for this trainee. <a href="' + fullPageUrl + '" target="_blank" style="color:#0b6040;font-weight:600;margin-left:8px;text-decoration:underline;"><i class="fa-solid fa-plus"></i> Add Dissertation</a></td></tr>';
+                    dTbody.innerHTML = '<tr><td colspan="4" class="arm-empty-row">No dissertation records submitted by this trainee yet.</td></tr>';
                 } else {
                     dissertations.forEach(function (d) {
-                        var st = (d.status || 'Submitted').toLowerCase();
-                        var badgeCls = (st.includes('approved') || st.includes('accepted')) ? 'arm-status-approved' : 'arm-status-submitted';
+                        var st = (d.status || 'Awaiting Approval').toLowerCase();
+                        var badgeCls = (st.includes('approved') || st.includes('accepted')) ? 'arm-status-approved' : (st.includes('discuss') || st.includes('resubmit') ? 'arm-status-under-review' : 'arm-status-pending');
                         var tr = document.createElement('tr');
+                        var isDApp = st.includes('approved') || st.includes('accepted');
+                        var remDColor = isDApp ? '#166534' : '#78350f';
+                        var remDBg = isDApp ? '#f0fdf4' : '#fffbeb';
+                        var remDBorder = isDApp ? '#bbf7d0' : '#fde68a';
                         var titleHtml = d.dissertation_title ? '<div style="font-size:11.5px;color:#64748b;margin-top:2px;">' + escapeHtml(d.dissertation_title) + '</div>' : '';
+                        var remarksHtml = (d.remarks && d.remarks.trim()) ? '<div style="font-size:11.5px;color:' + remDColor + ';background:' + remDBg + ';border:1px solid ' + remDBorder + ';border-radius:4px;padding:3px 8px;margin-top:4px;"><i class="fa-solid fa-comment-dots"></i> <strong>Supervisor Remarks:</strong> ' + escapeHtml(d.remarks) + '</div>' : '';
                         tr.innerHTML = '<td class="arm-col-hash">' + d.hash + '</td>' +
-                            '<td><i class="fa-regular fa-calendar-check" style="color:#64748b;margin-right:4px;"></i> <strong>' + escapeHtml(d.application_date) + '</strong>' + titleHtml + '</td>' +
-                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-file-circle-check"></i> ' + escapeHtml(d.status) + '</span></td>' +
+                            '<td><i class="fa-regular fa-calendar-check" style="color:#64748b;margin-right:4px;"></i> <strong>' + escapeHtml(d.application_date) + '</strong>' + titleHtml + remarksHtml + '</td>' +
+                            '<td><span class="arm-status-badge ' + badgeCls + '"><i class="fa-solid fa-file-circle-check"></i> ' + escapeHtml(d.status || 'Awaiting Approval') + '</span></td>' +
                             '<td><i class="fa-regular fa-calendar-days" style="color:#64748b;margin-right:4px;"></i> ' + escapeHtml(d.status_date) + '</td>';
                         dTbody.appendChild(tr);
                     });

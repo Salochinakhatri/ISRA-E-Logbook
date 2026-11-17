@@ -977,6 +977,11 @@
                                     <p class="trainee-activity-sub">
                                         <span style="font-weight: 600; color: #475569;">{{ $act['section'] }}</span> &bull; {{ $act['meta'] }}
                                     </p>
+                                    @if(!empty($act['supervisor_remarks']))
+                                        <div style="margin-top: 5px; padding: 5px 10px; background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #d97706; border-radius: 5px; font-size: 12px; color: #78350f;">
+                                            <strong style="color: #b45309;"><i class="fa-solid fa-comment-dots"></i> Supervisor Remarks:</strong> {{ $act['supervisor_remarks'] }}
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -988,7 +993,7 @@
                                     {{ $act['created_at']?->format('d-M-Y H:i') ?? '—' }}
                                 </span>
                                 <a href="{{ $act['url'] }}" class="btn-action-view" style="padding: 4px 10px; font-size: 11.5px;">
-                                    View
+                                    {{ (stripos($status, 'resubmit') !== false || stripos($status, 'discuss') !== false) ? 'Edit & Resubmit' : (stripos($status, 'draft') !== false ? 'Edit' : 'View') }}
                                 </a>
                             </div>
                         </li>

@@ -204,9 +204,21 @@ $rotationalGroups = [
 </div>
 @endif
 
+@if(isset($entry) && $entry->supervisor_remarks)
+<div class="alert alert-warning elog-flash" role="alert" style="background-color: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 14px 20px; border-radius: 6px; margin-bottom: 20px;">
+    <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-comment-dots"></i> Supervisor Remarks ({{ $entry->entry_status }}):
+    </div>
+    <div style="font-size: 13.5px;">{!! nl2br(e($entry->supervisor_remarks)) !!}</div>
+</div>
+@endif
+
 <div class="vd_content-section elog-content-section clearfix">
-    <form class="form-horizontal elog-form" action="{{ route('rotational.store') }}" method="post" id="rotationalAddForm" novalidate>
+    <form class="form-horizontal elog-form" action="{{ isset($entry) ? route('rotational.update', $entry->id) : route('rotational.store') }}" method="post" id="rotationalAddForm" novalidate>
         @csrf
+        @if(isset($entry))
+            @method('PUT')
+        @endif
         @if(request('program'))
             <input type="hidden" name="program" value="{{ request('program') }}">
         @endif

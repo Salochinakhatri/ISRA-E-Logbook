@@ -471,6 +471,11 @@
         </div>
         <div class="training-header__actions">
             @include('partials.program-badge', ['program' => request('program', $entry->program ?? '')])
+            @if(session('user_type') === 'Trainee' && in_array($entry->entry_status ?: 'Draft', ['Draft', 'Discuss and Resubmit'], true))
+            <a class="btn-training-outline" href="{{ route('training.edit', ['id' => $entry->id, 'program' => request('program', $entry->program ?? '')]) }}" style="background: #fffbeb; border-color: #d97706; color: #b45309 !important;">
+                <i class="fa-solid fa-pen-to-square"></i> {{ $entry->entry_status === 'Discuss and Resubmit' ? 'Edit & Resubmit Entry' : 'Edit Entry' }}
+            </a>
+            @endif
             <a class="btn-training-outline" href="{{ route('training.index', ['program' => request('program', $entry->program ?? '')]) }}">
                 <i class="fa-solid fa-arrow-left"></i> List All Entries
             </a>
@@ -627,31 +632,44 @@
 
     {{-- Supervisor Action Controls (when logged in as Supervisor) --}}
     @if(session('user_type') !== 'Trainee')
-    <div class="supervisor-actions-bar">
+    @if($entry->entry_status === 'Approved')
+    <div class="supervisor-actions-bar" style="background: #f0fdf4; border-color: #bbf7d0;">
         <div class="supervisor-actions__label">
-            <i class="fa-solid fa-user-check" style="color: #0b6040;"></i>
-            <span>Supervisor Actions for this Entry:</span>
+            <i class="fa-solid fa-lock" style="color: #15803d;"></i>
+            <span style="color: #166534;">
+                This entry has been approved{{ $entry->approvedBy ? ' by ' . ($entry->approvedBy->profile?->full_name ?: $entry->approvedBy->username) : '' }}{{ $entry->approved_at ? ' on ' . $entry->approved_at->format('d-m-Y H:i') : '' }} and is locked. Its status can no longer be changed.
+            </span>
         </div>
         <div class="supervisor-actions__btns">
-            <form action="{{ route('supervisor.entry.status', ['type' => 'training', 'id' => $entry->id]) }}" method="post" style="display: inline;">
-                @csrf
-                <input type="hidden" name="status" value="Approved">
-                <button type="submit" class="btn-sup-approve">
-                    <i class="fa-solid fa-check"></i> Approve Entry
-                </button>
-            </form>
-            <form action="{{ route('supervisor.entry.status', ['type' => 'training', 'id' => $entry->id]) }}" method="post" style="display: inline;">
-                @csrf
-                <input type="hidden" name="status" value="Awaiting Approval">
-                <button type="submit" class="btn-sup-pending">
-                    <i class="fa-solid fa-clock"></i> Set Pending
-                </button>
-            </form>
             <a href="{{ route('supervisor.entries', ['trainee_id' => $entry->user_id]) }}" class="btn-sup-outline">
                 <i class="fa-solid fa-list"></i> View Trainee Entries
             </a>
         </div>
     </div>
+    @else
+    <div class="supervisor-actions-bar">
+        <div class="supervisor-actions__label">
+            <i class="fa-solid fa-user-check" style="color: #0b6040;"></i>
+            <span>Supervisor Actions for this Entry:</span>
+        </div>
+        <form action="{{ route('supervisor.entry.status', ['type' => 'training', 'id' => $entry->id]) }}" method="post" class="supervisor-actions__btns" style="flex-wrap: wrap; align-items: center;">
+            @csrf
+            <input type="text" name="supervisor_remarks" value="" placeholder="Add supervisor remarks / instructions (optional)..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; min-width: 240px;">
+            <button type="submit" name="status" value="Approved" class="btn-sup-approve">
+                <i class="fa-solid fa-check"></i> Approve Entry
+            </button>
+            <button type="submit" name="status" value="Discuss and Resubmit" class="btn-sup-pending" style="background: #fff7ed; color: #c2410c; border-color: #fed7aa;">
+                <i class="fa-solid fa-comments"></i> Discuss &amp; Resubmit
+            </button>
+            <button type="submit" name="status" value="Awaiting Approval" class="btn-sup-pending">
+                <i class="fa-solid fa-clock"></i> Set Pending
+            </button>
+            <a href="{{ route('supervisor.entries', ['trainee_id' => $entry->user_id]) }}" class="btn-sup-outline">
+                <i class="fa-solid fa-list"></i> View Trainee Entries
+            </a>
+        </form>
+    </div>
+    @endif
     @endif
 </div>
 @endsection

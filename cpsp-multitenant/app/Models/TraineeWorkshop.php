@@ -21,6 +21,7 @@ class TraineeWorkshop extends Model
         'time_duration',
         'status',
         'status_date',
+        'remarks',
     ];
 
     protected $casts = [

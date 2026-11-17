@@ -19,7 +19,8 @@ class JournalController extends Controller
 
         $entries = JournalEntry::where('user_id', $userId)
             ->when($program !== '', fn($q) => $q->where('program', $program))
-            ->latest('date_of_diss')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
 
         return view('journal.index', compact('entries', 'program'));
@@ -81,6 +82,82 @@ class JournalController extends Controller
 
         return redirect()->route('journal.index', $params)
             ->with('flash_ok', 'Journal entry saved successfully.');
+    }
+
+    public function edit(Request $request, int $id): View|RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = JournalEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('journal.index')
+                ->with('flash_err', 'This entry cannot be edited because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program = (string) ($request->input('program') ?? $entry->program ?? '');
+        $entryDefaults = [
+            'date_of_diss'    => $entry->date_of_diss ? $entry->date_of_diss->format('d-m-Y') : '',
+            'fac_by'          => $entry->fac_by,
+            'ref_of_art_disc' => $entry->ref_of_art_disc,
+            'topic'           => $entry->topic,
+            'ref_article'     => $entry->ref_article,
+            'std_post'        => $entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : ($entry->std_post ?: 'No'),
+        ];
+        $formOld    = array_merge($entryDefaults, session()->pull('form_old', []), session()->getOldInput());
+        $formErrors = session()->pull('form_errors', []);
+
+        return view('journal.create', compact('entry', 'program', 'formOld', 'formErrors'));
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $userId = (int) session('user_id');
+        $entry  = JournalEntry::where('user_id', $userId)->findOrFail($id);
+
+        if (! $this->isEntryEditable($entry->entry_status)) {
+            return redirect()->route('journal.index')
+                ->with('flash_err', 'This entry cannot be updated because it is ' . ($entry->entry_status ?: 'locked') . '.');
+        }
+
+        $program = (string) $request->input('program', $entry->program ?? '');
+
+        $validator = Validator::make($request->all(), [
+            'date_of_diss' => ['required', 'string'],
+            'fac_by'       => ['required', 'string', 'max:255'],
+            'std_post'     => ['required', 'in:Yes,No'],
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $newStatus = $request->input('std_post') === 'Yes'
+            ? 'Awaiting Approval'
+            : ($entry->entry_status === 'Discuss and Resubmit' ? 'Discuss and Resubmit' : 'Draft');
+
+        $entry->update([
+            'date_of_diss'    => $this->parseBritishDate($request->input('date_of_diss', '')),
+            'fac_by'          => $request->input('fac_by'),
+            'ref_of_art_disc' => $request->input('ref_of_art_disc'),
+            'topic'           => (string) $request->input('topic', $entry->topic ?? ''),
+            'ref_article'     => (string) $request->input('ref_article', $entry->ref_article ?? ''),
+            'std_post'        => $request->input('std_post') === 'Yes' ? 'Yes' : ($entry->entry_status === 'Discuss and Resubmit' ? 'Yes' : 'No'),
+            'entry_status'    => $newStatus,
+        ]);
+
+        $params = $program !== '' ? ['program' => $program] : [];
+
+        return redirect()->route('journal.index', $params)
+            ->with('flash_ok', 'Journal entry updated successfully.');
+    }
+
+    private function isEntryEditable(?string $status): bool
+    {
+        $s = strtolower(trim((string) ($status ?? '')));
+
+        return $s === '' || $s === 'draft' || $s === 'discuss and resubmit';
     }
 
     private function parseBritishDate(string $s): ?string

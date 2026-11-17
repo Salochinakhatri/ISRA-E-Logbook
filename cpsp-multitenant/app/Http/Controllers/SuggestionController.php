@@ -18,7 +18,8 @@ class SuggestionController extends Controller
 
         $suggestions = Suggestion::where('user_id', $userId)
             ->when($program !== '', fn($q) => $q->where('program', $program))
-            ->latest('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
 
         return view('suggestions.index', compact('suggestions', 'program'));
